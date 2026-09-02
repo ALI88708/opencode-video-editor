@@ -604,8 +604,8 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
                 break
               }
               case "scanlines": {
-                // خطوط مسح CRT
-                cmd = `${ff()} -i ${QUOT(inP)} -vf "geq=lum='if(gt(mod(Y,4),1),lum,0)'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                // خطوط مسح CRT (باستخدام drawbox بدلاً من geq)
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "drawbox=y=0:w=iw:h=2:color=black@0.4:t=fill,drawbox=y=4:w=iw:h=2:color=black@0.4:t=fill,drawbox=y=8:w=iw:h=2:color=black@0.4:t=fill,drawbox=y=12:w=iw:h=2:color=black@0.4:t=fill" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
                 break
               }
               case "chromatic_aberration": {
@@ -622,7 +622,7 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
               }
               case "vhs_effect": {
                 // تأثير VHS كامل
-                cmd = `${ff()} -i ${QUOT(inP)} -vf "noise=alls=8:allf=t,eq=contrast=1.1:saturation=0.8:hue=h=10,geq=lum='if(gt(mod(Y,4),1),lum,0)',lenscorrection=k1=-0.02" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "noise=alls=8:allf=t,eq=contrast=1.1:saturation=0.8,hue=h=10,lenscorrection=k1=-0.02" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
                 break
               }
               case "crash_zoom": {
