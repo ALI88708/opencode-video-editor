@@ -9,12 +9,42 @@ description: كمبيوتر شامل للمونتاج وإنتاج الفيدي�
 
 هذه المهارة مخصصة لإنتاج وتحرير الفيديوهات بشكل احترافي باستخدام FFmpeg. تغطي كل عمليات المونتاج من الأساسيات إلى التقنيات المتقدمة، مع تكامل كامل مع مكتبة موارد المستخدم المحلية.
 
+## ⚠️ موديل عرض الفيديو/الصور (CRITICAL)
+
+### المشكلة
+بعض الموديلات (مثل GPT-4o, Claude, etc.) **لا تدعم** عرض الصور/الفيديو مباشرة - تقرأ الملفات كـ binary وتتوقف.
+
+### الحل: MiMo V2.5 Free
+**يجب استخدام موديل `opencode/mimo-v2-free`** عند الحاجة لـ:
+- مشاهدة الفيديو مباشرة (video_preview)
+- قراءة صور (read on .jpg/.png)
+- تحليل محتوى الفيديو بصرياً
+
+### قاعدة مهمة
+```
+إذا طلب المستخدم معاينة فيديو/صورة:
+1. جرّب video_preview أو read على الصورة
+2. إذا ظهر "Cannot read image" أو خطأ → أخبر المستخدم:
+   "الموديل الحالي لا يدعم عرض الصور. استخدم MiMo V2.5 Free من إعدادات الموديل"
+3. إذا نجح → أكمل التحليل بشكل طبيعي
+```
+
+### طريقة التبديل
+في opencode.json أو إعدادات الـ provider:
+```json
+{
+  "model": "opencode/mimo-v2-free"
+}
+```
+
+---
+
 ## بيئة التشغيل
 
 - **النظام**: Windows (win32)
 - **Shell**: PowerShell 5.1
-- **FFmpeg**: مثبت عبر winget (Gyan.FFmpeg 9.0.1)
-- **مسار FFmpeg**: `C:\Users\mr_ali7685\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-9.0.1-full_build\bin\ffmpeg.exe`
+- **FFmpeg**: Gyan.FFmpeg 9.0.1
+- **موديل العرض**: MiMo V2.5 Free (يجب استخدامه لعرض الصور/الفيديو)
 
 ### ملاحظة مهمة عن PATH
 عند فتح جلسة جديدة، يجب تحديث PATH قبل استخدام ffmpeg:
