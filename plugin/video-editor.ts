@@ -87,7 +87,7 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
     tool: {
       video_montage: tool({
         description:
-          "أداة مونتاج وإنتاج فيديو احترافية مبنية على FFmpeg. تدعم: فحص الملفات، القص، الدمج، إضافة نصوص/عناوين (عبر libass)، النصوص المتحركة، مؤثرات صوتية من مكتبة المستخدم، موسيقى، جرين سكرين، تحكم بالسرعة، علامة مائية، تثبيت، مصغرات، تحويل صيغ، قص/تدوير، فلاتر، خلط صوتي، حرق ترجمة، وPicture-in-Picture. ملاحظة: استخدم نسب المسارات مع فلتر النصوص لتفادي مشكلة fontconfig, والأدوات تنفذ أوامر ffmpeg فعلية.",
+          "أداة مونتاج وإنتاج فيديو احترافية مبنية على FFmpeg. تدعم: فحص الملفات، القص، الدمج، إضافة نصوص/عناوين (عبر libass)، النصوص المتحركة، مؤثرات صوتية من مكتبة المستخدم، موسيقى، جرين سكرين، تحكم بالسرعة، علامة مائية، تثبيت، مصغرات، تحويل صيغ، قص/تدوير، فلاتر، خلط صوتي، حرق ترجمة، Picture-in-Picture، والمؤثرات البصرية المتقدمة: glitch، rgb_shift، film_grain، light_leaks، film_burn، scanlines، chromatic_aberration، pixelate_face، vhs_effect، crash_zoom، shake، lens_flare، particle_overlay. ملاحظة: استخدم نسب المسارات مع فلتر النصوص لتفادي مشكلة fontconfig، والأدوات تنفذ أوامر ffmpeg فعلية.",
         args: {
           action: tool
             .schema.enum([
@@ -132,6 +132,19 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
               "crop_detect",
               "scene_detect",
               "extract_audio",
+              "glitch",
+              "rgb_shift",
+              "film_grain",
+              "light_leaks",
+              "film_burn",
+              "scanlines",
+              "chromatic_aberration",
+              "pixelate_face",
+              "vhs_effect",
+              "crash_zoom",
+              "shake",
+              "lens_flare",
+              "particle_overlay",
             ])
             .describe("العملية التي تريد تنفيذها"),
           input: tool.schema.string().optional().describe("مسار ملف الإدخال"),
@@ -207,6 +220,12 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
           k2: tool.schema.number().optional().describe("معامل التشويه الشعاعي k2"),
           // Scene detect
           scene_threshold: tool.schema.number().optional().describe("عتبة كشف المشهد 0-1، الافتراضي 0.4"),
+          // Visual Effects
+          intensity: tool.schema.number().optional().describe("شدة التأثير (glitch, shake) 0-1، الافتراضي 0.3"),
+          amount: tool.schema.number().optional().describe("مقدار إزاحة RGB/Chromatic Aberration، الافتراضي 3-5"),
+          strength: tool.schema.number().optional().describe("قوة حبيبات الفيلم، الافتراضي 10"),
+          block_size: tool.schema.number().optional().describe("حجم كتلة البكسلنة، الافتراضي 20"),
+          overlay: tool.schema.string().optional().describe("مسار فيديو التراكب (light_leaks, film_burn, lens_flare, particle_overlay)"),
         },
         async execute(args, context) {
           const a = args
@@ -551,6 +570,96 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
                 else if (fmt === "wav") cmd = `${ff()} -i ${QUOT(inP)} -vn -acodec pcm_s16le ${QUOT(out)}`
                 else if (fmt === "aac") cmd = `${ff()} -i ${QUOT(inP)} -vn -acodec aac -b:a 256k ${QUOT(out)}`
                 else cmd = `${ff()} -i ${QUOT(inP)} -vn -acodec libmp3lame -q:a 2 ${QUOT(out)}`
+                break
+              }
+              case "glitch": {
+                // تأثير غلتيش رقمي
+                const intensity = a.intensity ?? 0.3
+                const duration = a.duration ?? 1
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "geq=r='r(X+${Math.round(intensity*10)},Y)':g='g(X,Y)':b='b(X-${Math.round(intensity*10)},Y)':a='if(gt(random(0),${1-intensity}),0,alpha)',sendcmd='${duration} geq r=0 g=0 b=0'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "rgb_shift": {
+                // إزاحة قنوات RGB (Chromatic Aberration)
+                const amount = a.amount ?? 3
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "geq=r='r(X+${amount},Y)':g='g(X,Y)':b='b(X-${amount},Y)'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "film_grain": {
+                // حبيبات فيلم
+                const strength = a.strength ?? 10
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "noise=alls=${strength}:allf=t" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "light_leaks": {
+                // تسربات ضوء (overlay مع blend mode)
+                const overlay = a.overlay ?? `${BASE}/Content creation/Backgrounds/Video Loops/light_leak.mp4`
+                cmd = `${ff()} -i ${QUOT(inP)} -i ${QUOT(overlay)} -filter_complex "[1:v]scale=1920:1080,format=rgba,colorchannelmixer=aa=0.3[ol];[0:v][ol]overlay=0:0:format=auto,blend=all_mode='screen'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "film_burn": {
+                // حرق فيلم (overlay مع blend)
+                const overlay = a.overlay ?? `${BASE}/Content creation/Backgrounds/Video Loops/film_burn.mp4`
+                cmd = `${ff()} -i ${QUOT(inP)} -i ${QUOT(overlay)} -filter_complex "[1:v]scale=1920:1080,format=rgba,colorchannelmixer=aa=0.4[ol];[0:v][ol]overlay=0:0:format=auto,blend=all_mode='overlay'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "scanlines": {
+                // خطوط مسح CRT
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "geq=lum='if(gt(mod(Y,4),1),lum,0)'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "chromatic_aberration": {
+                // انحراف لوني (مثل rgb_shift لكن أقوى)
+                const amount = a.amount ?? 5
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "geq=r='r(X+${amount},Y)':g='g(X,Y)':b='b(X-${amount},Y)',boxblur=1:1" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "pixelate_face": {
+                // بكسلنة وجوه (بسيط - منطقة وسط)
+                const blockSize = a.block_size ?? 20
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "geq=lum='if(gt(abs(X-W/2),W/6)*gt(abs(Y-H/2),H/6),lum,if(gt(mod(X,${blockSize}),${blockSize/2})*gt(mod(Y,${blockSize}),${blockSize/2}),lum(X-${blockSize},Y-${blockSize}),lum))'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "vhs_effect": {
+                // تأثير VHS كامل
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "noise=alls=8:allf=t,eq=contrast=1.1:saturation=0.8:hue=h=10,geq=lum='if(gt(mod(Y,4),1),lum,0)',lenscorrection=k1=-0.02" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "crash_zoom": {
+                // Crash Zoom (زوم سريع جداً مع motion blur)
+                const zoom = a.zoom ?? 3
+                const duration = a.zoom_duration ?? 0.2
+                const probe = await $`ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 ${inP}`.quiet()
+                const dims = (probe.stdout?.toString?.() ?? "0,0").trim().split(",").map((s) => parseInt(s.trim(), 10))
+                const srcW = dims[0] || 1366
+                const srcH = dims[1] || 768
+                const outW = a.width && a.width > 0 ? a.width : srcW
+                const outH = a.height && a.height > 0 ? a.height : srcH
+                const zw = Math.floor((outW * zoom) / 2) * 2
+                const zh = Math.floor((outH * zoom) / 2) * 2
+                const cx = a.center_x ?? 0.5
+                const cy = a.center_y ?? 0.5
+                const offx = Math.round(cx * (zw - outW))
+                const offy = Math.round(cy * (zh - outH))
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "scale=${zw}:${zh},crop=${outW}:${outH}:${offx}:${offy},tmix=frames=3:weights=1 1 1" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "shake": {
+                // اهتزاز الكاميرا (Camera Shake)
+                const intensity = a.intensity ?? 10
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "crop=iw-${intensity*2}:ih-${intensity*2}:${intensity}*sin(t*30):${intensity}*cos(t*25)" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "lens_flare": {
+                // توهج عدسة (Lens Flare)
+                const overlay = a.overlay ?? `${BASE}/Content creation/Backgrounds/Video Loops/lens_flare.mp4`
+                cmd = `${ff()} -i ${QUOT(inP)} -i ${QUOT(overlay)} -filter_complex "[1:v]scale=1920:1080,format=rgba,colorchannelmixer=aa=0.5[ol];[0:v][ol]overlay=0:0:format=auto,blend=all_mode='screen'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "particle_overlay": {
+                // جسيمات فوق الفيديو (ثلج، غبار، شرر)
+                const overlay = a.overlay ?? `${BASE}/Content creation/Backgrounds/Video Loops/particles.mp4`
+                cmd = `${ff()} -i ${QUOT(inP)} -i ${QUOT(overlay)} -filter_complex "[1:v]scale=1920:1080,format=rgba,colorchannelmixer=aa=0.4[ol];[0:v][ol]overlay=0:0:format=auto,blend=all_mode='add'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
                 break
               }
               default:

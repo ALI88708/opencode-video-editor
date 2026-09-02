@@ -2048,8 +2048,269 @@ ffmpeg -i in.mp4 -vf cropdetect=24:16:0 -f null - 2>&1 | tail -1
 ```
 
 ---
+ 
+## P. المؤثرات البصرية المتقدمة (Visual Effects) 🎨
+ 
+> هذه القسم يغطي كل المؤثرات البصرية المتاحة عبر البلوقن (`video_montage` action) وأوامر FFmpeg المباشرة. استخدمها لإضافة لمسة احترافية وسينمائية لمقاطعك.
+ 
+### P.1 فلتر الألوان والدرجات (Color Filters & Grading)
+ 
+| الفلتر | الاستخدام | أمثلة |
+|--------|----------|-------|
+| `cinematic` | تباين + دفء خفيف + تشبع | افتراضي للمونتاج الاحترافي |
+| `teal-orange` | سينمائي كلاسيكي (أزرق/برتقالي) | أفلام الأكشن، السفر |
+| `vintage` | فيلم قديم، ألوان باهتة | ريترو، نوستالجيا |
+| `bleach-bypass` | تباين عالي، تشبع منخفض | رعب، إثارة، دراما قاسية |
+| `film-noir` | أبيض/أسود عالي التباين | غموض، تحقيق، أسلوب قديم |
+| `hdr` | نطاق ديناميكي عالي | لقطات طبيعة، درون |
+| `vibrant` | تشبع عالي، ألوان ناقطة | ميمز، محتوى مرح، أطفال |
+| `vhs` | ضوضاء، تشبع منخفض، تباين | أسلوب VHS قديم |
+| `negative` | ألوان معكوسة | تأثير غريب، غلتيش |
+| `sharpen` | حدة تفاصيل | لقطات ضبابية، نص صغير |
+| `blur` | ضبابية صندوقية | خلفية، تركيز على كائن |
+| `vignette` | إظلام الأطراف | تركيز على المركز، سينمائي |
+ 
+**عبر البلوقن:**
+```typescript
+await video_montage({ action: "filter", effect: "cinematic", input: "in.mp4", output: "out.mp4" })
+await video_montage({ action: "color_grade", color_preset: "teal-orange", input: "in.mp4", output: "out.mp4" })
+await video_montage({ action: "color_grade", lut: "C:/path/to/lut.cube", input: "in.mp4", output: "out.mp4" })
+```
+ 
+### P.2 مؤثرات السينمائية المتخصصة (Cinematic Effects)
+ 
+| التأثير | الوصف | المعاملات |
+|----------|--------|-----------|
+| `lens_correction` | تصحيح تشويه العدسة (GoPro، درون) | `k1`, `k2` (مثال: `k1=-0.05`) |
+| `denoise` | إزالة ضوضاء الفيديو | `denoise_strength` (0-1، افتراضي 0.5) |
+| `motion_blur` | ضبابية حركة طبيعية | - |
+| `film_grain` | حبيبات فيلم | `strength` |
+| `light_leaks` | تسربات ضوء | - |
+| `film_burn` | حرق فيلم | - |
+| `scanlines` | خطوط مسح CRT | - |
+| `rgb_shift` | إزاحة قنوات RGB | `amount` |
+| `glitch` | غلتيش رقمي | `intensity`, `duration` |
+| `chromatic_aberration` | انحراف لوني | - |
+ 
+**أوامر FFmpeg مباشرة:**
+ 
+```bash
+# Film Grain
+ffmpeg -i in.mp4 -vf "noise=alls=10:allf=t" -c:v libx264 -crf 18 out.mp4
 
+# Lens Correction (GoPro k1=-0.05)
+ffmpeg -i in.mp4 -vf "lenscorrection=k1=-0.05:k2=0.01" -c:v libx264 -crf 18 out.mp4
+
+# Denoise (hqdn3d)
+ffmpeg -i in.mp4 -vf "hqdn3d=10:10:6:6" -c:v libx264 -crf 18 out.mp4
+
+# Motion Blur (tmix)
+ffmpeg -i in.mp4 -vf "tmix=frames=5:weights=1 1 1 1 1" -c:v libx264 -crf 18 out.mp4
+
+# RGB Shift / Glitch
+ffmpeg -i in.mp4 -vf "geq=r='r(X+2,Y)':g='g(X,Y)':b='b(X-2,Y)'" -c:v libx264 -crf 18 out.mp4
+
+# Scanlines
+ffmpeg -i in.mp4 -vf "geq='if(gt(mod(Y,4),1),lum,0)'" -c:v libx264 -crf 18 out.mp4
+
+# Chromatic Aberration
+ffmpeg -i in.mp4 -vf "lenscorrection=k1=-0.02:k2=0.01" -c:v libx264 -crf 18 out.mp4
+```
+ 
+### P.3 الانتقالات البصرية المتقدمة (Visual Transitions)
+ 
+| الانتقال | الوصف | الاستخدام |
+|-----------|--------|-----------|
+| `zoomin` / `zoomout` | زوم أثناء الانتقال | أكشن، أبرز لحظة |
+| `smooth` / `fade` | تلاشي ناعم | عام، احترافي |
+| `whippan` | حركة كاميرا سريعة | أكشن، سرعة |
+| `flash` / `fadeblack` | وميض أبيض/أسود | صدمة، ذروة |
+| `circle` / `circleopen` | دائرة تفتح/تغلق | تركيز على كائن |
+| `wipe` / `wiperight` | مسح أفقي | تغير مشهد |
+| `slideleft` / `slideright` | انزلاق | تدفق مستمر |
+| `smoothleft` / `smoothright` | انزلاق سلس | سينمائي |
+| `distance` | انتقال أومني | فنّي |
+| `pixelize` | بكسل | غلتيش، ريترو |
+| `radial` | شعاعي | علمي، تقني |
+| `squeezev` / `squeezeh` | ضغط | مضحك، ميمز |
+ 
+**عبر البلوقن:**
+```typescript
+await video_montage({ 
+  action: "legendary_transition", 
+  transition_type: "flash", 
+  transition_duration: 0.3,
+  input: "clip1.mp4", 
+  inputs: ["clip2.mp4"], 
+  output: "out.mp4" 
+})
+```
+ 
+### P.4 الزوم والتتبع (Zoom & Tracking)
+ 
+| النوع | الوصف | المعاملات |
+|-------|--------|-----------|
+| `punch` | تقريب فوري سريع (0.3-0.5ث) | `zoom=1.5`, `zoom_duration=0.4`, `center_x/y` |
+| `in` | تقريب بطيء درامي (2-4ث) | `zoom=1.5-2.0`, `zoom_duration=3` |
+| `out` | تبعيد للكشف عن السياق | `zoom=1.5→1`, `zoom_duration=2-3` |
+ 
+**عبر البلوقن:**
+```typescript
+await video_montage({ 
+  action: "zoom", 
+  zoom_type: "punch", 
+  zoom: 1.6, 
+  zoom_duration: 0.4, 
+  center_x: 0.5, 
+  center_y: 0.5,
+  input: "clip.mp4", 
+  output: "zoomed.mp4" 
+})
+```
+ 
+> **ملاحظة هامة:** البلوقن يستخدم `scale+crop` للزوم الثابت (يحافظ على المدة والـ FPS تماماً). للزوم المتحرك استخدم `zoompan` مع `setpts` كما موضح في القسم التقني.
+ 
+### P.5 تأثيرات النص والطباعة (Text Effects)
+ 
+| التأثير | الوصف | مثال |
+|----------|--------|------|
+| `appear` | ظهور تدريجي | عنوان رئيسي |
+| `slide-in-left` | انزلاق من اليسار | نص سفلي |
+| `slide-in-right` | انزلاق من اليمين | نص جانبي |
+| `scroll` | تمرير أفقي | تيكير أخبار |
+| `typewriter` | كتابة حرف بحرف | درامي |
+| `glitch_text` | نص غلتيش | رعب، تقني |
+| `neon` | نيون متوهج | سيبربانك |
+| `3d_text` | نص ثلاثي الأبعاد | سينمائي |
+ 
+**عبر البلوقن:**
+```typescript
+await video_montage({ 
+  action: "animated_text", 
+  animation: "slide-in-left",
+  text: "EPIC MOMENT", 
+  size: 80, 
+  color: "yellow",
+  font: "Luckiest Guy.ttf",
+  input: "in.mp4", 
+  output: "out.mp4" 
+})
+```
+ 
+### P.6 مؤشرات بصرية (Visual Indicators)
+ 
+| المؤشر | الوصف | الاستخدام |
+|---------|--------|-----------|
+| `waveform` | موجة صوتية في الأسفل | بودكاست، ミュージック فيديو |
+| `progress_bar` | شريط تقدم | شورتس، ريلز، تيك توك |
+| `timecode` | كود زمني محروق | مراجعة، دايليز |
+| `thumbnail_grid` | شبكة 12 لقطة | معاينة سريعة، اختيار ثومبنيل |
+ 
+**عبر البلوقن:**
+```typescript
+await video_montage({ action: "waveform", waveform_color: "white", waveform_bg: "black@0.5", input: "in.mp4", output: "out.mp4" })
+await video_montage({ action: "progress_bar", progress_color: "red", progress_height: 4, input: "in.mp4", output: "out.mp4" })
+await video_montage({ action: "timecode", input: "in.mp4", output: "out.mp4" })
+await video_montage({ action: "thumbnail_grid", input: "in.mp4", output: "grid.jpg" })
+```
+ 
+### P.7 تأثيرات الوجه والخصوصية
+ 
+| التأثير | الوصف |
+|----------|--------|
+| `blur_face` | تمويه وجوه (boxblur على مناطق ثابتة) |
+| `pixelate_face` | بكسلنة وجوه |
+ 
+> **تنبيه:** البلوقن الحالي يستخدم `geq` للتمويه البسيط. للكشف الحقيقي عن الوجوه تحتاج ML model خارجي.
+ 
+### P.8 Decision Tree للمؤثرات البصرية (Visual Effects Decision Tree)
+ 
+```
+هل تحتاج مؤثر بصري؟
+├─ لا → اتركه نظيف (أقل = أكثر)
+└─ نعم → ما الهدف؟
+     ├─ إبراز لحظة (قتلة، نص) → Zoom Punch + Flash/Sound
+     ├─ بناء ترقب → Zoom In بطيء + Suspense SFX + Darker grade
+     ├─ كشف سياق → Zoom Out + Cinematic Whoosh
+     ├─ مزاج سينمائي → Color Grade (teal-orange/cinematic) + Film Grain
+     ├─ مزاج ريترو/قديم → VHS + Vintage + Scanlines
+     ├─ مزاج غلتيش/تقني → RGB Shift + Glitch + Negative flashes
+     ├─ مزاج رعب → Film Noir + Denoise + Heartbeat SFX
+     ├─ محتوى تعليمي → Zoom In على UI + Progress Bar + Timecode
+     ├─ شورتس/ريلز → Progress Bar + Vibrant + Fast cuts
+     └─ انتقال بين مشاهد → Legendary Transition (اختر حسب المزاج)
+```
+ 
+### P.9 وصفات جاهزة (Visual Effect Recipes)
+ 
+#### 1. "Epic Gaming Moment" (لحظة قتلة حماسية)
+```typescript
+// 1. Zoom Punch على اللحظة
+await video_montage({ action: "zoom", zoom_type: "punch", zoom: 1.6, zoom_duration: 0.4, center_x: 0.5, center_y: 0.4, input: "clip.mp4", output: "z.mp4" })
+
+// 2. Flash transition للانتقال للقطعة التالية
+await video_montage({ action: "legendary_transition", transition_type: "flash", transition_duration: 0.25, input: "z.mp4", inputs: ["next.mp4"], output: "trans.mp4" })
+
+// 3. Color Grade سينمائي
+await video_montage({ action: "color_grade", color_preset: "teal-orange", input: "trans.mp4", output: "grade.mp4" })
+
+// 4. Impact SFX
+await video_montage({ action: "add_sfx", category: "suspense", sfx: "Impact (1).wav", at: 0, input: "grade.mp4", output: "final.mp4" })
+```
+ 
+#### 2. "Meme/Comedy Style" (ستايل ميمز مضحك)
+```typescript
+// 1. Vibrant colors
+await video_montage({ action: "filter", effect: "vibrant", input: "in.mp4", output: "v.mp4" })
+
+// 2. Speed up الأجزاء المملة
+await video_montage({ action: "speed", factor: 3, input: "v.mp4", output: "sp.mp4" })
+
+// 3. Zoom Punch + Anime Punch SFX على الفشل
+await video_montage({ action: "zoom", zoom_type: "punch", zoom: 1.8, zoom_duration: 0.3, input: "sp.mp4", output: "z.mp4" })
+await video_montage({ action: "add_sfx", category: "meme", sfx: "Anime punch.mp3", at: 0, input: "z.mp4", output: "sfx.mp4" })
+
+// 4. Vine Boom على الانتقال
+await video_montage({ action: "add_sfx", category: "meme", sfx: "Vine Boom.mp3", at: 5, input: "sfx.mp4", output: "final.mp4" })
+```
+ 
+#### 3. "Cinematic Travel/Drone" (سفر/درون سينمائي)
+```typescript
+// 1. Lens Correction للـ GoPro/Drone
+await video_montage({ action: "lens_correction", k1: -0.05, k2: 0.01, input: "raw.mp4", output: "corr.mp4" })
+
+// 2. Denoise للقطات الليلية
+await video_montage({ action: "denoise", denoise_strength: 0.5, input: "corr.mp4", output: "dn.mp4" })
+
+// 3. Color Grade سينمائي
+await video_montage({ action: "color_grade", color_preset: "cinematic", input: "dn.mp4", output: "grade.mp4" })
+
+// 4. Speed Ramp للكشف عن المنظر
+await video_montage({ action: "speed_ramp", speed_points: "0:1,2:0.3,6:1", input: "grade.mp4", output: "ramp.mp4" })
+
+// 5. Motion Blur للحركة السلسة
+await video_montage({ action: "motion_blur", input: "ramp.mp4", output: "final.mp4" })
+```
+ 
+#### 4. "Educational/Tutorial" (تعليمي/شروحات)
+```typescript
+// 1. Progress Bar
+await video_montage({ action: "progress_bar", progress_color: "blue", progress_height: 4, input: "in.mp4", output: "pb.mp4" })
+
+// 2. Timecode للمراجعة
+await video_montage({ action: "timecode", input: "pb.mp4", output: "tc.mp4" })
+
+// 3. Zoom In على النقرات
+await video_montage({ action: "zoom", zoom_type: "in", zoom: 1.5, zoom_duration: 1, center_x: 0.7, center_y: 0.3, input: "tc.mp4", output: "zoom.mp4" })
+
+// 4. Blur Face للخصوصية
+await video_montage({ action: "blur_face", blur_strength: 25, input: "zoom.mp4", output: "final.mp4" })
+```
+ 
+---
+ 
 ## خلاصة فلسفة المونتاج
 > **المونتاج ليس تنفيذ أوامر، بل رواية قصة بإيقاعٍ متعمد.**
-> كل قص، كل موسيقى، كل أفكت، كل نص — قرار فني يخدم المزاج والهدف.
-> افهم المزاج أولاً، ثم خطط الهيكل، ثم نفذ. التبسيط والتحكم هما علامتا الاحتراف.
+> كل قص، كل موسيقى، كل أفكت، كل نص، كل زوم، كل تسريع — قرار فني يخدم المزاج والهدف.
+> افهم المزاج أولاً، ثم خطط الهيكل (مع Decision Trees)، ثم نفذ. التبسيط والتحكم هما علامتا الاحتراف.
+> أقل = أكثر. الاحترافية: التحكم وليس التكثير.
