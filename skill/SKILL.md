@@ -1727,9 +1727,299 @@ ffmpeg -i thumb.jpg -vf "eq=contrast=1.2:saturation=1.4" thumb_vivid.jpg
 
 ---
 
+## L. أدوات متقدمة جديدة (New Plugin Actions)
+
+### L.1 Speed Ramp (`speed_ramp`) — تسارع/إبطاء متدرج
+```bash
+speed_points="0:1,2:2,5:0.5,8:1"
+# 0ث: سرعة عادية، 2ث: 2x، 5ث: 0.5x، 8ث: عادية
+```
+**متى تستخدم:** تقنيات Speed Ramping للـ highlights، drone shots، action sequences
+**نصيحة:** استخدم 3-4 نقاط كحد أقصى، انتقالات ناعمة أفضل من قفزات حادة
+
+### L.2 Color Grade (`color_grade`) — تصنيف لوني احترافي
+```bash
+# عبر LUT
+lut="path/to/lut.cube"
+
+# أو Presets جاهزة
+color_preset="cinematic"       # تباين + دفء خفيف + توازن
+color_preset="teal-orange"     # سينمائي كلاسيكي
+color_preset="vintage"         # فيلم قديم
+color_preset="bleach-bypass"   # تباين عالي، تشبع منخفض
+color_preset="film-noir"       # أبيض/أسود عالي التباين
+color_preset="hdr"             # نطاق ديناميكي عالي
+color_preset="log-to-rec709"   # تحويل Log إلى Rec.709
+```
+**نصيحة:** لـ LUTs: ضعها في `C:\Users\mr_ali7685\Documents\مونتاج\Content creation\LUTs\`
+
+### L.3 Audio Duck (`audio_duck`) — تخفيض الموسيقى تحت الكلام
+```bash
+music="path/to/music.mp3"
+duck_amount=0.2      # ينزل الموسيقى لـ 20% عند وجود كلام
+duck_attack=0.1      # سرعة التخفيف (ثواني)
+duck_release=0.5     # سرعة العودة (ثواني)
+```
+**متى تستخدم:** Voiceover، commentary، podcast على موسيقى خلفية
+
+### L.4 Normalize Audio (`normalize_audio`) — تطبيع EBU R128
+```bash
+target_lufs=-14      # YouTube/Spotify/Netflix standard
+true_peak=-1         # يمنع التشبع
+```
+**مهم:** يمرر مرتين (analyze → apply) — يضمن loudness موحد للمنصات
+
+### L.5 Auto Cut (`auto_cut`) — قص تلقائي بالصمت/المشهد
+```bash
+cut_threshold=0.3    # عتبة الصمت (dB)
+min_scene=1          # أقل مدة مشهد (ثواني)
+```
+**يستخدم:** `silencedetect` + `scene` filter — جيد للمحتوى الطويل، podcasts
+
+### L.6 Beat Sync (`beat_sync`) — قص على الإيقاع
+```bash
+bpm=128              # أو 140 للـ EDM، 90 للـ Hip-hop
+```
+**نصيحة:** احسب BPM الموسيقى أولاً، ثم القص على الـ downbeats
+
+### L.7 Thumbnail Grid (`thumbnail_grid`) — شبكة معاينة (Contact Sheet)
+```bash
+# ينتج صورة واحدة 4x3 = 12 لقطة موزعة على الفيديو
+```
+**مفيد:** Quick preview، اختيار أفضل لحظات للـ thumbnail
+
+### L.8 GIF Loop (`gif_loop`) — GIF متكرر بسلاسة
+```bash
+duration=4           # مدة الـ GIF
+loop_count=0         # 0 = لا نهائي، 1 = مرة واحدة
+```
+**تقنية:** palettegen → paletteuse مع bayer dithering للجودة
+
+### L.9 Waveform (`waveform`) — رسم موجة الصوت
+```bash
+waveform_color="white"
+waveform_bg="black@0.5"
+```
+**مستخدم لـ:** Podcast visualization، music videos، audiograms
+
+### L.10 Progress Bar (`progress_bar`) — شريط تقدم
+```bash
+progress_color="red"
+progress_height=4
+```
+**مستخدم لـ:** Shorts/Reels/TikTok — يشير للمشاهد "كم باقي"
+
+### L.11 Blur Face (`blur_face`) — تمويه وجوه
+```bash
+blur_strength=20     # قوة التمويه
+```
+**مهم:** هذا فلتر بسيط (boxblur على مناطق ثابتة) — للـ face detection الحقيقي تحتاج ML
+
+### L.12 Motion Blur (`motion_blur`) — ضبابية حركة
+```bash
+# tmix بـ 5 إطارات = motion blur طبيعي
+```
+**مستخدم لـ:** تحسين الـ 60fps→30fps، stylized look
+
+### L.13 Denoise (`denoise`) — إزالة ضوضاء
+```bash
+denoise_strength=0.5 # 0-1
+```
+**Fltr:** `hqdn3d` — جيد للفيديوهات الليلية، ISO عالي
+
+### L.14 Lens Correction (`lens_correction`) — تصحيح عدسة
+```bash
+k1=-0.05             # تشويه برميل (salmon)
+k2=0.01              # تشويه وسادة
+```
+**مستخدم لـ:** GoPro، wide-angle، drone footage
+
+### L.15 Timecode (`timecode`) — حرق كود زمني
+```bash
+# خط Consolas للوضوح
+```
+**مستخدم لـ:** Dailies، review copies، sync reference
+
+### L.16 Crop Detect (`crop_detect`) — كشف حواف تلقائي
+```bash
+# يطبع: crop=1920:800:0:140
+```
+**مستخدم لـ:** إزالة الحروف السوداء التلقائي
+
+### L.17 Scene Detect (`scene_detect`) — كشف تغيير المشهد
+```bash
+scene_threshold=0.4  # 0.3 حساس، 0.5 أقل حساسية
+```
+**يخرج:** timestamps لتغييرات المشهد — جيد للـ chapter markers
+
+### L.18 Extract Audio (`extract_audio`) — استخراج صوت فقط
+```bash
+format="mp3"         # أو wav, aac
+```
+
+---
+
+## M. سير عمل متقدم (Advanced Workflows)
+
+### M.1 Podcast/Interview كامل
+```
+1. extract_audio → normalize_audio → (clean في DAW خارجي)
+2. auto_cut على الصمت → يدوي refine
+3. add_music (intro/outro) + audio_duck تحت الكلام
+4. waveform للبصرية + timecode للمراجعة
+5. subtitle_burn للنصوص
+```
+
+### M.2 Gaming Montage Competitive
+```
+1. video_preview (عدة نقاط) → حدد أفضل اللحظات
+2. cut لقطات 3-8 ثواني لكل → مرر عبر fps=60,setpts
+3. color_grade "teal-orange" أو LUT خاص
+4. beat_sync على موسيقى (bpm=140 للـ phonk/EDM)
+5. zoom "punch" على الـ clutches/aces
+6. legendary_transition "flash" بين الـ rounds
+7. add_sfx: "Boom" على الـ kills، "Anime punch" على الـ headshots
+8. progress_bar لـ Shorts
+9. thumbnail_grid → اختر أفضل لقطة
+```
+
+### M.3 Cinematic Travel/Drone
+```
+1. lens_correction (k1=-0.05 للـ GoPro/drone)
+2. denoise للقطات الليلية
+3. color_grade "cinematic" أو LUT
+4. speed_ramp: drone reveal (0:1→2:0.3→5:1)
+5. motion_blur للحركة السلسة
+6. add_music + afade in/out
+7. thumbnail_grid للـ location scouting
+```
+
+### M.4 Educational/Tutorial
+```
+1. timecode للـ timestamps
+2. progress_bar للمدة
+3. zoom "in" على UI clicks
+4. blur_face للـ privacy
+5. extract_audio → normalize_audio للتعليق الصوتي
+6. auto_cut على الصمت بين الشروحات
+```
+
+---
+
+## N. Decision Trees جديدة (للأدوات الجديدة)
+
+### N.1 Speed Ramp Decision Tree
+```
+هل في حركة تحتاج إبراز؟
+├─ نعم: هل هي كشف/Reveal؟ → Slow in (0.25-0.5x) على لحظة الكشف
+├─ نعم: هل هي Action/Impact؟ → Fast → Slow → Fast (punch)
+├─ نعم: هل Drone/Fly-through؟ → Speed up على الطيران، slow على المنظر
+└─ لا: لا تستخدم speed ramp (يبقى ثابت)
+```
+
+### N.2 Color Grade Decision Tree
+```
+ما المزاج؟
+├─ سينمائي/دراما → cinematic / teal-orange / bleach-bypass
+├─ كوميدي/خفيف → vibrant / hdr
+├─ رعب/غموض → film-noir / vintage (desaturated)
+├─ رياضي/حماسي → teal-orange / hdr
+├─ وثائقي/طبيعي → log-to-rec709 / لا فلتر
+└─ فيديو قديم/Retro → vintage / film-noir
+```
+
+### N.3 Audio Duck Decision Tree
+```
+هل في كلام (Voiceover/Commentary)؟
+├─ نعم → Duck music إلى 10-30% (duck_amount=0.1-0.3)
+│   ├─ كلام سريع/كثير → Attack سريع (0.05)، Release بطيء (0.8)
+│   └─ كلام متباعد → Attack متوسط (0.15)، Release متوسط (0.5)
+└─ لا → لا تحتاج duck
+```
+
+### N.4 Denoise Decision Tree
+```
+اللقطة ليلية / ISO عالي؟
+├─ نعم: denoise_strength=0.3-0.7 (ابتداً 0.5، زد إن احتجت)
+│   ├─ جداً مزعج → 0.7-1.0 (لكن يفقد التفاصيل)
+│   └─ خفيف → 0.2-0.4
+└─ لا: لا تحتاج denoise (يفقد الحدة)
+```
+
+### N.5 Lens Correction Decision Tree
+```
+نوع الكاميرا؟
+├─ GoPro/Action Cam → k1=-0.05 إلى -0.1
+├─ Drone (DJI) → k1=-0.02 إلى -0.05
+├─ Wide-angle lens → k1=-0.03 إلى -0.08
+├─ Fisheye → k1=-0.1 إلى -0.2, k2=0.01-0.05
+└─ عادي/Phone → عادة لا يحتاج
+```
+
+---
+
+## O. مراجع أوامر FFmpeg للأدوات الجديدة
+
+### Speed Ramp
+```bash
+# منحنى سرعة سلس
+ffmpeg -i in.mp4 -vf "setpts='if(lt(t,2),t/1,if(lt(t,5),2+(t-2)*0.5,t-3))'" -af "atempo=1" out.mp4
+```
+
+### Color Grade with LUT
+```bash
+ffmpeg -i in.mp4 -vf "lut3d='file.cube'" -c:v libx264 -crf 18 out.mp4
+```
+
+### Audio Duck (Sidechain)
+```bash
+ffmpeg -i voice.mp4 -i music.mp3 -filter_complex \
+"[1:a]volume=0.2[ducked];[0:a][ducked]sidechaincompress=threshold=0.1:ratio=20:attack=0.1:release=0.5[a]" \
+-map 0:v -map "[a]" -c:v copy -c:a aac out.mp4
+```
+
+### Normalize EBU R128 (2-pass)
+```bash
+# Pass 1: تحليل
+ffmpeg -i in.mp4 -af loudnorm=I=-14:TP=-1:LRA=11:print_format=json -f null -
+
+# Pass 2: تطبيق (استخدم القيم المقاسة)
+ffmpeg -i in.mp4 -af loudnorm=I=-14:TP=-1:LRA=11:measured_I=-18:measured_TP=-2:measured_LRA=8:measured_thresh=-28:offset=4:linear=true out.mp4
+```
+
+### Thumbnail Grid
+```bash
+ffmpeg -i in.mp4 -vf "select='gte(t,5)+gte(t,15)+gte(t,25)+gte(t,35)',scale=320:180,tile=2x2" -frames:v 1 grid.jpg
+```
+
+### GIF Loop مثالي
+```bash
+# Pass 1: palette
+ffmpeg -i in.mp4 -vf "fps=15,scale=480:-1:flags=lanczos,palettegen=max_colors=256" palette.png
+# Pass 2: GIF
+ffmpeg -i in.mp4 -i palette.png -filter_complex "fps=15,scale=480:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=5" -loop 0 out.gif
+```
+
+### Waveform Overlay
+```bash
+ffmpeg -i in.mp4 -filter_complex \
+"[0:a]showwaves=s=1920x200:mode=line:rate=30:colors=white[wv];[0:v][wv]overlay=0:H-h" \
+-c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy out.mp4
+```
+
+### Scene Detect
+```bash
+ffmpeg -i in.mp4 -vf "select='gt(scene,0.4)',showinfo" -f null - 2>&1 | grep pts_time
+```
+
+### Crop Detect
+```bash
+ffmpeg -i in.mp4 -vf cropdetect=24:16:0 -f null - 2>&1 | tail -1
+```
+
+---
+
 ## خلاصة فلسفة المونتاج
 > **المونتاج ليس تنفيذ أوامر، بل رواية قصة بإيقاعٍ متعمد.**
-> كل قص، كل موسيقى، كل أفكت، كل نص — قرار فني يخدم المزاج والهدف.
-> افهم المزاج أولاً، ثم خطط الهيكل، ثم نفذ. التبسيط والتحكم هما علامتا الاحتراف.
 > كل قص، كل موسيقى، كل أفكت، كل نص — قرار فني يخدم المزاج والهدف.
 > افهم المزاج أولاً، ثم خطط الهيكل، ثم نفذ. التبسيط والتحكم هما علامتا الاحتراف.

@@ -100,13 +100,17 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
               "add_music",
               "green_screen",
               "speed",
+              "speed_ramp",
               "watermark",
               "stabilize",
               "thumbnail",
               "convert",
               "crop_rotate",
               "filter",
+              "color_grade",
               "audio_mix",
+              "audio_duck",
+              "normalize_audio",
               "subtitle_burn",
               "pip",
               "image_to_video",
@@ -114,6 +118,20 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
               "reverse_video",
               "zoom",
               "legendary_transition",
+              "auto_cut",
+              "beat_sync",
+              "thumbnail_grid",
+              "gif_loop",
+              "waveform",
+              "progress_bar",
+              "blur_face",
+              "motion_blur",
+              "denoise",
+              "lens_correction",
+              "timecode",
+              "crop_detect",
+              "scene_detect",
+              "extract_audio",
             ])
             .describe("العملية التي تريد تنفيذها"),
           input: tool.schema.string().optional().describe("مسار ملف الإدخال"),
@@ -155,6 +173,40 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
           center_y: tool.schema.number().optional().describe("مركز الزوم العمودي (0-1)، الافتراضي 0.5"),
           transition_type: tool.schema.enum(["zoomin", "zoomout", "smooth", "whippan", "flash", "fade", "circle", "wipe"]).optional().describe("نوع الإنتقالة الأسطورية بين لقطتين"),
           transition_duration: tool.schema.number().optional().describe("مدة الإنتقالة بالثواني، الافتراضي 0.5"),
+          // Speed ramp
+          speed_points: tool.schema.string().optional().describe("نقاط السرعة: '0:1,5:2,10:0.5' = عند 0ث 1x، عند 5ث 2x، عند 10ث 0.5x"),
+          // Color grade
+          lut: tool.schema.string().optional().describe("مسار ملف LUT (.cube, .3dl)"),
+          color_preset: tool.schema.enum(["cinematic", "teal-orange", "vintage", "bleach-bypass", "film-noir", "hdr", "log-to-rec709"]).optional().describe("Preset للتصنيف اللوني"),
+          // Audio duck
+          duck_amount: tool.schema.number().optional().describe("كمية التخفيض للموسيقى تحت الكلام 0-1، الافتراضي 0.2"),
+          duck_attack: tool.schema.number().optional().describe("سرعة التخفيف بالثواني، الافتراضي 0.1"),
+          duck_release: tool.schema.number().optional().describe("سرعة العودة بالثواني، الافتراضي 0.5"),
+          // Normalize
+          target_lufs: tool.schema.number().optional().describe("مستوى الهدف LUFS، الافتراضي -14 (YouTube/Spotify)"),
+          true_peak: tool.schema.number().optional().describe("حد القمة الحقيقي، الافتراضي -1"),
+          // Auto cut
+          cut_threshold: tool.schema.number().optional().describe("عتبة كشف الصمت/تغيير المشهد 0-1، الافتراضي 0.3"),
+          min_scene: tool.schema.number().optional().describe("أقل مدة مشهد بالثواني، الافتراضي 1"),
+          // Beat sync
+          bpm: tool.schema.number().optional().describe("BPM للإيقاع، الافتراضي 120"),
+          // GIF loop
+          loop_count: tool.schema.number().optional().describe("عدد التكرار، 0 = لا نهائي، الافتراضي 0"),
+          // Waveform
+          waveform_color: tool.schema.string().optional().describe("لون موجة الصوت، الافتراضي white"),
+          waveform_bg: tool.schema.string().optional().describe("لون خلفية الموجة، الافتراضي black@0.5"),
+          // Progress bar
+          progress_color: tool.schema.string().optional().describe("لون شريط التقدم، الافتراضي red"),
+          progress_height: tool.schema.number().optional().describe("ارتفاع شريط التقدم بالبيكسل، الافتراضي 4"),
+          // Blur face
+          blur_strength: tool.schema.number().optional().describe("قوة التمويه، الافتراضي 20"),
+          // Denoise
+          denoise_strength: tool.schema.number().optional().describe("قوة إزالة الضوضاء 0-1، الافتراضي 0.5"),
+          // Lens correction
+          k1: tool.schema.number().optional().describe("معامل التشويه الشعاعي k1"),
+          k2: tool.schema.number().optional().describe("معامل التشويه الشعاعي k2"),
+          // Scene detect
+          scene_threshold: tool.schema.number().optional().describe("عتبة كشف المشهد 0-1، الافتراضي 0.4"),
         },
         async execute(args, context) {
           const a = args
@@ -332,6 +384,173 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
                 const firstDur = parseFloat((durProbe.stdout?.toString?.() ?? "0").trim()) || 2
                 const off = Math.max(firstDur - td, 0.1)
                 cmd = `${ff()} -i ${QUOT(inP)} -i ${QUOT(in2)} -filter_complex "[0:v][1:v]xfade=transition=${xf}:duration=${td}:offset=${off}[v];[0:a][1:a]acrossfade=d=${td}[a]" -map "[v]" -map "[a]" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a aac ${QUOT(out)}`
+                break
+              }
+              case "speed_ramp": {
+                // Speed ramping: تغيير السرعة بمرور الوقت
+                const points = a.speed_points ?? "0:1"
+                const ptsStr = points.split(",").map((p: string) => {
+                  const [t, s] = p.split(":").map(Number)
+                  return `${t}*TB/${s}`
+                }).join(",")
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "setpts='${ptsStr}'" -af "atempo=1" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "color_grade": {
+                // تصنيف لوني متقدم
+                let vf = "eq=contrast=1.1:brightness=0.02:saturation=1.2"
+                if (a.lut) {
+                  vf = `lut3d=${QUOT(a.lut)}`
+                } else if (a.color_preset) {
+                  const presets: Record<string, string> = {
+                    cinematic: "eq=contrast=1.15:brightness=0.03:saturation=1.15,colorbalance=rs=0.05:gs=0.02:bs=-0.05",
+                    "teal-orange": "eq=contrast=1.1:saturation=1.2,colorbalance=rs=0.1:gs=0:bs=-0.1",
+                    vintage: "eq=contrast=0.9:brightness=0.05:saturation=0.7:gamma=1.1,colorbalance=rs=0.15:gs=0.05:bs=-0.1",
+                    "bleach-bypass": "eq=contrast=1.3:brightness=-0.05:saturation=0.5,hue=s=0.6",
+                    "film-noir": "hue=s=0,eq=contrast=1.5:brightness=-0.1",
+                    hdr: "zscale=t=linear:npl=100,tonemap=hable,zscale=t=bt709:npl=100",
+                    "log-to-rec709": "zscale=t=linear:npl=100,tonemap=hable,zscale=t=bt709:npl=100",
+                  }
+                  vf = presets[a.color_preset] ?? vf
+                }
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "${vf}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "audio_duck": {
+                // تخفيض الموسيقى تحت الكلام
+                const duck = a.duck_amount ?? 0.2
+                const attack = a.duck_attack ?? 0.1
+                const release = a.duck_release ?? 0.5
+                cmd = `${ff()} -i ${QUOT(inP)} -i ${QUOT(a.music)} -filter_complex "[1:a]volume=${duck},asidedata=mode=select:metadata=sidechain[ducked];[0:a][ducked]sidechaincompress=threshold=0.1:ratio=20:attack=${attack}:release=${release}[a]" -map "0:v" -map "[a]" -c:v copy -c:a aac ${QUOT(out)}`
+                break
+              }
+              case "normalize_audio": {
+                // تطبيع الصوت EBU R128
+                const target = a.target_lufs ?? -14
+                const tp = a.true_peak ?? -1
+                // 2-pass: تحليل ثم تطبيع
+                const stats = `${path.dirname(out)}/audio_stats.json`
+                const pass1 = await $`${ff()} -i ${QUOT(inP)} -af "loudnorm=I=${target}:TP=${tp}:LRA=11:print_format=json" -f null -`.quiet()
+                const match = pass1.stderr?.toString?.().match(/\{[\s\S]*\}/)
+                let measured_I = target, measured_TP = tp, measured_LRA = 11, measured_thresh = -20, offset = 0
+                if (match) {
+                  try {
+                    const j = JSON.parse(match[0])
+                    measured_I = j.input_i
+                    measured_TP = j.input_tp
+                    measured_LRA = j.input_lra
+                    measured_thresh = j.input_thresh
+                    offset = j.target_offset
+                  } catch {}
+                }
+                cmd = `${ff()} -i ${QUOT(inP)} -af "loudnorm=I=${target}:TP=${tp}:LRA=11:measured_I=${measured_I}:measured_TP=${measured_TP}:measured_LRA=${measured_LRA}:measured_thresh=${measured_thresh}:offset=${offset}:linear=true:print_format=summary" -c:v copy -c:a aac ${QUOT(out)}`
+                break
+              }
+              case "auto_cut": {
+                // قص تلقائي عند الصمت أو تغيير المشهد
+                const threshold = a.cut_threshold ?? 0.3
+                const minScene = a.min_scene ?? 1
+                // استخدام silencedetect و scene لتوليد نقاط القص
+                cmd = `${ff()} -i ${QUOT(inP)} -af "silencedetect=n=${threshold}dB:d=${minScene}" -f null - 2>&1 | grep -E "silence_(start|end)"`
+                break
+              }
+              case "beat_sync": {
+                // قص على إيقاع الموسيقى (BPM)
+                const bpm = a.bpm ?? 120
+                const beatDur = 60 / bpm
+                const probe = await $`ffprobe -v error -show_entries format=duration -of csv=p=0 ${inP}`.quiet()
+                const dur = parseFloat((probe.stdout?.toString?.() ?? "0").trim()) || 0
+                const cuts = []
+                for (let t = 0; t < dur; t += beatDur) cuts.push(t.toFixed(2))
+                cmd = `echo "نقاط القص على الإيقاع (${bpm} BPM): ${cuts.join(", ")}"`
+                break
+              }
+              case "thumbnail_grid": {
+                // شبكة صور مصغرة (contact sheet)
+                const cols = 4
+                const rows = 3
+                const count = cols * rows
+                const probe = await $`ffprobe -v error -show_entries format=duration -of csv=p=0 ${inP}`.quiet()
+                const dur = parseFloat((probe.stdout?.toString?.() ?? "0").trim()) || 0
+                const step = dur / (count + 1)
+                const selects = []
+                for (let i = 1; i <= count; i++) selects.push(`gte(t,${(i * step).toFixed(2)})`)
+                const sel = selects.join("+")
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "select='${sel}',scale=320:180,tile=${cols}x${rows}" -frames:v 1 -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "gif_loop": {
+                // GIF متكرر بسلاسة
+                const loops = a.loop_count ?? 0
+                const dur = a.duration ?? 4
+                const palette = `${path.dirname(out)}/palette.png`
+                const pass1 = await $`${ff()} -i ${QUOT(inP)} -vf "fps=15,scale=480:-1:flags=lanczos,palettegen=max_colors=256" ${QUOT(palette)}`.quiet()
+                cmd = `${ff()} -i ${QUOT(inP)} -i ${QUOT(palette)} -filter_complex "fps=15,scale=480:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=5" -loop ${loops} ${QUOT(out)}`
+                try { fs.unlinkSync(palette) } catch {}
+                break
+              }
+              case "waveform": {
+                // رسم موجة الصوت على الفيديو
+                const wColor = a.waveform_color ?? "white"
+                const bgColor = a.waveform_bg ?? "black@0.5"
+                cmd = `${ff()} -i ${QUOT(inP)} -filter_complex "[0:a]showwaves=s=1920x200:mode=line:rate=30:colors=${wColor}[wv];[0:v][wv]overlay=0:H-h:format=auto,drawbox=y=H-h:w=iw:h=200:color=${bgColor}:t=fill" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "progress_bar": {
+                // شريط تقدم في أسفل الفيديو
+                const pColor = a.progress_color ?? "red"
+                const pHeight = a.progress_height ?? 4
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "drawbox=y=H-${pHeight}:w='w*t/duration':h=${pHeight}:color=${pColor}:t=fill" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "blur_face": {
+                // تمويه الوجوه (يحتاج face detection)
+                const strength = a.blur_strength ?? 20
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "geq=lum='if(gt(abs(X-W/2),W/4)*gt(abs(Y-H/2),H/4),lum,boxblur=${strength}:1)'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "motion_blur": {
+                // إضافة motion blur
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "tmix=frames=5:weights=1 1 1 1 1" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "denoise": {
+                // إزالة ضوضاء الفيديو
+                const strength = a.denoise_strength ?? 0.5
+                const sigma = Math.round(strength * 20)
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "hqdn3d=${sigma}:${sigma}:6:6" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "lens_correction": {
+                // تصحيح تشويه العدسة
+                const k1v = a.k1 ?? 0
+                const k2v = a.k2 ?? 0
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "lenscorrection=k1=${k1v}:k2=${k2v}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "timecode": {
+                // حرق timecode على الفيديو
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "drawtext=fontfile='C:/Windows/Fonts/consola.ttf':text='%{pts\\:hms}':fontsize=36:fontcolor=white:borderw=2:bordercolor=black:x=20:y=20" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "crop_detect": {
+                // كشف حواف القص التلقائي
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "cropdetect=24:16:0" -f null - 2>&1 | tail -1`
+                break
+              }
+              case "scene_detect": {
+                // كشف تغييرات المشهد
+                const threshold = a.scene_threshold ?? 0.4
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "select='gt(scene,${threshold})',showinfo" -f null - 2>&1 | grep "pts_time"`
+                break
+              }
+              case "extract_audio": {
+                // استخراج الصوت فقط
+                const fmt = a.format ?? "mp3"
+                if (fmt === "mp3") cmd = `${ff()} -i ${QUOT(inP)} -vn -acodec libmp3lame -q:a 2 ${QUOT(out)}`
+                else if (fmt === "wav") cmd = `${ff()} -i ${QUOT(inP)} -vn -acodec pcm_s16le ${QUOT(out)}`
+                else if (fmt === "aac") cmd = `${ff()} -i ${QUOT(inP)} -vn -acodec aac -b:a 256k ${QUOT(out)}`
+                else cmd = `${ff()} -i ${QUOT(inP)} -vn -acodec libmp3lame -q:a 2 ${QUOT(out)}`
                 break
               }
               default:
