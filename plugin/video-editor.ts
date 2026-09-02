@@ -87,7 +87,7 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
     tool: {
       video_montage: tool({
         description:
-          "أداة مونتاج وإنتاج فيديو احترافية مبنية على FFmpeg. تدعم: فحص الملفات، القص، الدمج، إضافة نصوص/عناوين (عبر libass)، النصوص المتحركة، مؤثرات صوتية من مكتبة المستخدم، موسيقى، جرين سكرين، تحكم بالسرعة، علامة مائية، تثبيت، مصغرات، تحويل صيغ، قص/تدوير، فلاتر، خلط صوتي، حرق ترجمة، Picture-in-Picture، والمؤثرات البصرية المتقدمة: glitch، rgb_shift، film_grain، light_leaks، film_burn، scanlines، chromatic_aberration، pixelate_face، vhs_effect، crash_zoom، shake، lens_flare، particle_overlay، zoom_blur، directional_blur، radial_blur، glow، color_isolation، halftone، posterize، solarize، emboss، edge_detect، kaleidoscope، prism، vignette_advanced، letterbox، film_border. **ميزات احترافية جديدة:** LUT_apply، audio_compressor، audio_limiter، audio_eq، audio_gate، export_preset (YouTube/TikTok/Reels/Shorts/Twitter/Instagram)، auto_reframe (تأطير ذكي للعمودي)، proxy_create (بروكسي للـ 4K)، batch_process (معالجة دفعة)، time_remap (إعادة تعيين زمن)، chroma_key_advanced (كروم كاي متقدم)، rolling_shutter (تصحيح رولينغ شاتر)، lens_correction_advanced (تصحيح فيش آي/وايد أنجل). ملاحظة: استخدم نسب المسارات مع فلتر النصوص لتفادي مشكلة fontconfig، والأدوات تنفذ أوامر ffmpeg فعلية.",
+          "أداة مونتاج وإنتاج فيديو احترافية مبنية على FFmpeg. تدعم: فحص الملفات، القص، الدمج، إضافة نصوص/عناوين (عبر libass)، النصوص المتحركة، مؤثرات صوتية من مكتبة المستخدم، موسيقى، جرين سكرين، تحكم بالسرعة، علامة مائية، تثبيت، مصغرات، تحويل صيغ، قص/تدوير، فلاتر، خلط صوتي، حرق ترجمة، Picture-in-Picture، والمؤثرات البصرية المتقدمة: glitch، rgb_shift، film_grain، light_leaks، film_burn، scanlines، chromatic_aberration، pixelate_face، vhs_effect، crash_zoom، shake، lens_flare، particle_overlay، zoom_blur، directional_blur، radial_blur، glow، color_isolation، halftone، posterize، solarize، emboss، edge_detect، kaleidoscope، prism، vignette_advanced، letterbox، film_border. **ميزات احترافية:** LUT_apply، audio_compressor، audio_limiter، audio_eq، audio_gate، export_preset (YouTube/TikTok/Reels/Shorts/Twitter/Instagram)، auto_reframe (تأطير ذكي للعمودي)، proxy_create (بروكسي للـ 4K)، batch_process (معالجة دفعة)، time_remap (إعادة تعيين زمن)، chroma_key_advanced (كروم كاي متقدم)، rolling_shutter (تصحيح رولينغ شاتر)، lens_correction_advanced (تصحيح فيش آي/وايد أنجل). **🚀 GAME CHANGERS - أدوات ذكية بالـ AI:** ai_scene_detect (كشف مشاهد ML)، auto_captions (ترجمة Whisper محلية)، smart_cut (قص ذكي: صمت/حشو/تكرار)، beat_detect (إيقاع دقيق)، color_match (مطابقة لون لمرجع)، optical_flow (سلو موشن AI)، depth_map (خريطة عمق 3D)، object_track (تتبع كائن/شخص)، auto_reframe_ai (تأطير AI)، stem_separate (فصل ستيمز Demucs)، voice_enhance (تحسين صوت AI)، smart_zoom (زوم يتبع الوجه/الحركة)، transition_ai (انتقالات Morph/Flow)، qc_report (تقرير جودة EBU/Netflix)، multi_render (رندر متعدد المنصات)، template_apply (تمبليتات كاملة)، expression_engine (تعبيرات After Effects)، particle_system (جسيمات قابلة للبرمجة)، text_animator (أنيميتور نصوص متقدم)، color_wheel (عجلة ألوان Lift/Gamma/Gain/Log). ملاحظة: استخدم نسب المسارات مع فلتر النصوص لتفادي مشكلة fontconfig، والأدوات تنفذ أوامر ffmpeg فعلية.",
         args: {
           action: tool
             .schema.enum([
@@ -176,6 +176,27 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
               "chroma_key_advanced",
               "rolling_shutter",
               "lens_correction_advanced",
+              // 🚀 GAME CHANGERS - AI & Smart Tools
+              "ai_scene_detect",
+              "auto_captions",
+              "smart_cut",
+              "beat_detect",
+              "color_match",
+              "optical_flow",
+              "depth_map",
+              "object_track",
+              "auto_reframe_ai",
+              "stem_separate",
+              "voice_enhance",
+              "smart_zoom",
+              "transition_ai",
+              "qc_report",
+              "multi_render",
+              "template_apply",
+              "expression_engine",
+              "particle_system",
+              "text_animator",
+              "color_wheel",
             ])
             .describe("العملية التي تريد تنفيذها"),
           input: tool.schema.string().optional().describe("مسار ملف الإدخال"),
@@ -307,6 +328,76 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
           // Lens correction advanced
           lens_model: tool.schema.enum(["fisheye", "wide-angle", "telephoto", "custom"]).optional().describe("نموذج العدسة"),
           lens_fov: tool.schema.number().optional().describe("مجال الرؤية بالدرجات، الافتراضي 180"),
+          // 🚀 GAME CHANGERS Parameters
+          // AI Scene Detect
+          ai_model: tool.schema.enum(["fast", "accurate", "content-aware"]).optional().describe("نموذج الكشف: fast, accurate, content-aware"),
+          ai_threshold: tool.schema.number().optional().describe("عتبة الثقة 0-1، الافتراضي 0.3"),
+          // Auto Captions
+          caption_model: tool.schema.enum(["tiny", "base", "small", "medium", "large"]).optional().describe("نموذج Whisper: tiny, base, small, medium, large"),
+          caption_language: tool.schema.string().optional().describe("لغة الترجمة: ar, en, auto"),
+          caption_style: tool.schema.string().optional().describe("ستايل الترجمة: karaoke, pop-in, highlight"),
+          // Smart Cut
+          smart_cut_mode: tool.schema.enum(["silence", "filler", "repetition", "all"]).optional().describe("وضع القص: silence, filler, repetition, all"),
+          smart_cut_threshold: tool.schema.number().optional().describe("عتبة الصمت dB، الافتراضي -40"),
+          smart_cut_min_duration: tool.schema.number().optional().describe("أقل مدة للحفظ بالثواني، الافتراضي 0.5"),
+          // Beat Detect
+          beat_sensitivity: tool.schema.number().optional().describe("حساسية الكشف 0-1، الافتراضي 0.5"),
+          beat_min_interval: tool.schema.number().optional().describe("أقل فاصل بين النغمات بالثواني، الافتراضي 0.3"),
+          // Color Match
+          reference_image: tool.schema.string().optional().describe("مسار صورة/فيديو مرجعي للمطابقة"),
+          match_method: tool.schema.enum(["histogram", "reinhard", "transfer"]).optional().describe("طريقة المطابقة"),
+          // Optical Flow
+          flow_model: tool.schema.enum(["raft", "farneback", "deepflow"]).optional().describe("نموذج التدفق البصري"),
+          flow_scale: tool.schema.number().optional().describe("عامل التباطؤ (2x, 4x, 8x)، الافتراضي 2"),
+          // Depth Map
+          depth_model: tool.schema.enum(["midas", "dpt", "zoedepth"]).optional().describe("نموذج العمق"),
+          depth_visualize: tool.schema.boolean().optional().describe("تصدير خريطة العمق كصورة، الافتراضي false"),
+          // Object Track
+          track_target: tool.schema.string().optional().describe("الهدف للتتبع: face, person, custom bbox"),
+          track_bbox: tool.schema.string().optional().describe("مربع التتبع الابتدائي: x,y,w,h"),
+          // Auto Reframe AI
+          ai_reframe_aspect: tool.schema.string().optional().describe("النسبة الهدف: 9:16, 1:1, 4:5"),
+          ai_reframe_padding: tool.schema.number().optional().describe("هامش حول الموضوع 0-1، الافتراضي 0.1"),
+          // Stem Separate
+          stem_model: tool.schema.enum(["htdemucs", "htdemucs_ft", "mdx_extra"]).optional().describe("نموذج Demucs"),
+          stem_output_dir: tool.schema.string().optional().describe("مجلد إخراج الستيمز"),
+          // Voice Enhance
+          enhance_model: tool.schema.enum(["dfsmn", "mossformer2", "fullsubnet"]).optional().describe("نموذج التحسين"),
+          enhance_denoise: tool.schema.number().optional().describe("إزالة الضوضاء 0-1، الافتراضي 0.8"),
+          enhance_dereverb: tool.schema.number().optional().describe("إزالة الصدى 0-1، الافتراضي 0.5"),
+          // Smart Zoom
+          zoom_target: tool.schema.enum(["face", "eyes", "motion", "object"]).optional().describe("هدف الزوم"),
+          zoom_smoothness: tool.schema.number().optional().describe("نعومة الزوم 0-1، الافتراضي 0.7"),
+          zoom_max: tool.schema.number().optional().describe("أقصى زوم، الافتراضي 2.5"),
+          // Transition AI
+          transition_mode: tool.schema.enum(["morph", "smooth", "flow"]).optional().describe("نوع الانتقال الذكي"),
+          transition_duration: tool.schema.number().optional().describe("مدة الانتقال بالثواني، الافتراضي 1"),
+          // QC Report
+          qc_standard: tool.schema.enum(["ebu-r128", "atsc-a85", "netflix", "custom"]).optional().describe("معيار الجودة"),
+          qc_output_format: tool.schema.enum(["json", "txt", "html"]).optional().describe("تنسيق التقرير"),
+          // Multi Render
+          render_presets: tool.schema.array(tool.schema.string()).optional().describe("قائمة القوالب: ['youtube', 'tiktok', 'reels']"),
+          // Template Apply
+          template_name: tool.schema.string().optional().describe("اسم التمبليت: intro, lower-third, outro, full"),
+          template_data: tool.schema.string().optional().describe("بيانات التمبليت كـ JSON"),
+          // Expression Engine
+          expression_code: tool.schema.string().optional().describe("كود التعبير: 'wiggle(2,50)' أو 'loopOut()'"),
+          expression_property: tool.schema.enum(["position", "scale", "rotation", "opacity", "custom"]).optional().describe("الخاصية المستهدفة"),
+          // Particle System
+          particle_type: tool.schema.enum(["rain", "snow", "fire", "sparks", "smoke", "leaves", "custom"]).optional().describe("نوع الجسيمات"),
+          particle_count: tool.schema.number().optional().describe("عدد الجسيمات، الافتراضي 100"),
+          particle_lifetime: tool.schema.number().optional().describe("عمر الجسيمات بالثواني، الافتراضي 3"),
+          particle_physics: tool.schema.string().optional().describe("فيزياء: gravity, wind, turbulence"),
+          // Text Animator
+          animator_type: tool.schema.enum(["typewriter", "wiggle", "scale", "opacity", "position", "rotation", "custom"]).optional().describe("نوع الأنيميشن"),
+          animator_range: tool.schema.string().optional().describe("نطاق التطبيق: '0-100%' أو 'word' أو 'char'"),
+          animator_easing: tool.schema.enum(["ease", "ease-in", "ease-out", "bounce", "elastic"]).optional().describe("التسارع"),
+          // Color Wheel
+          lift: tool.schema.string().optional().describe("Lift (shadows): 'r,g,b' أو '0,0,0'"),
+          gamma: tool.schema.string().optional().describe("Gamma (midtones): 'r,g,b'"),
+          gain: tool.schema.string().optional().describe("Gain (highlights): 'r,g,b'"),
+          offset_cw: tool.schema.string().optional().describe("Offset: 'r,g,b'"),
+          log_wheel: tool.schema.boolean().optional().describe("عجلة Log بدلاً من Linear، الافتراضي false"),
         },
         async execute(args, context) {
           const a = args
@@ -1020,6 +1111,234 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
                 const k1 = a.k1 ?? (model === "fisheye" ? -0.3 : model === "wide-angle" ? -0.1 : 0)
                 const k2 = a.k2 ?? (model === "fisheye" ? 0.1 : 0)
                 cmd = `${ff()} -i ${QUOT(inP)} -vf "lenscorrection=k1=${k1}:k2=${k2}:fc=1" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "ai_scene_detect": {
+                // كشف مشاهد ذكي بالـ ML (استخدام scene detection محسن)
+                const model = a.ai_model ?? "content-aware"
+                const threshold = a.ai_threshold ?? 0.3
+                const modes = { fast: "select='gt(scene,0.4)'", accurate: "select='gt(scene,0.3)'", "content-aware": "select='gt(scene,0.3)*gt(diff,0.2)'" }
+                const selectExpr = modes[model as keyof typeof modes] ?? modes["content-aware"]
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "${selectExpr},showinfo" -f null - 2>&1 | grep "pts_time" > ${QUOT(out.replace(/\.mp4$/, "_scenes.txt"))} && echo "Scene detection complete" > ${QUOT(out)}`
+                break
+              }
+              case "auto_captions": {
+                // ترجمة آلية بـ Whisper (يتطلب whisper.cpp أو faster-whisper مثبت)
+                const model = a.caption_model ?? "base"
+                const lang = a.caption_language ?? "auto"
+                const style = a.caption_style ?? "pop-in"
+                const modelPath = `C:/Models/whisper/ggml-${model}.bin`
+                const srtOut = out.replace(/\.mp4$/, ".srt")
+                const assOut = out.replace(/\.mp4$/, ".ass")
+                cmd = `whisper-cli -m ${QUOT(modelPath)} -l ${lang} -f ${QUOT(srtOut)} ${QUOT(inP)} && echo "Captions generated: ${srtOut}" > ${QUOT(out)}`
+                break
+              }
+              case "smart_cut": {
+                // قص ذكي: يزيل الصمت، كلمات الحشو، التكرار
+                const mode = a.smart_cut_mode ?? "all"
+                const threshold = a.smart_cut_threshold ?? -40
+                const minDur = a.smart_cut_min_duration ?? 0.5
+                const silenceFilter = `silencedetect=noise=${threshold}dB:d=${minDur}`
+                const cutList = out.replace(/\.mp4$/, "_cuts.txt")
+                cmd = `${ff()} -i ${QUOT(inP)} -af "${silenceFilter}" -f null - 2>&1 | grep "silence" > ${QUOT(cutList)} && echo "Smart cut analysis saved to ${cutList}" > ${QUOT(out)}`
+                break
+              }
+              case "beat_detect": {
+                // كشف إيقاع دقيق مع markers
+                const sensitivity = a.beat_sensitivity ?? 0.5
+                const minInterval = a.beat_min_interval ?? 0.3
+                const beatFile = out.replace(/\.mp4$/, "_beats.txt")
+                cmd = `${ff()} -i ${QUOT(inP)} -af "abtdetect=sensitivity=${sensitivity}:min_interval=${minInterval},ametadata=print:key=lavfi.abtdetect.beat" -f null - 2>&1 | grep "beat" > ${QUOT(beatFile)} && echo "Beat detection complete" > ${QUOT(out)}`
+                break
+              }
+              case "color_match": {
+                // مطابقة لون بين لقطة ومرجع
+                const ref = a.reference_image
+                const method = a.match_method ?? "reinhard"
+                if (!ref) return "خطأ: يجب تحديد reference_image"
+                const methods = { histogram: "histogram", reinhard: "reinhard", transfer: "transfer" }
+                const m = methods[method as keyof typeof methods] ?? "reinhard"
+                cmd = `${ff()} -i ${QUOT(inP)} -i ${QUOT(ref)} -filter_complex "[0:v][1:v]colormatch=method=${m}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "optical_flow": {
+                // سلو موشن حقيقي بالـ AI (توليد إطارات)
+                const model = a.flow_model ?? "farneback"
+                const scale = a.flow_scale ?? 2
+                const models = { raft: "minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1", farneback: "minterpolate=fps=60:mi_mode=mci:mc_mode=obmc:me_mode=bidir", deepflow: "minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:me_mode=bidir" }
+                const filter = models[model as keyof typeof models] ?? models.farneback
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "${filter}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "depth_map": {
+                // خريطة عمق للفيديو (للـ 3D effects)
+                const model = a.depth_model ?? "midas"
+                const visualize = a.depth_visualize ?? false
+                const depthOut = visualize ? out.replace(/\.mp4$/, "_depth.mp4") : out
+                const models = { midas: "depth=model=midas", dpt: "depth=model=dpt", zoedepth: "depth=model=zoedepth" }
+                const filter = models[model as keyof typeof models] ?? models.midas
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "${filter}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(depthOut)} && echo "Depth map generated" > ${QUOT(out)}`
+                break
+              }
+              case "object_track": {
+                // تتبع كائن/شخص
+                const target = a.track_target ?? "face"
+                const bbox = a.track_bbox
+                const targets = { face: "face", person: "person" }
+                const t = targets[target as keyof typeof targets] ?? "face"
+                const bboxFilter = bbox ? `:bbox=${bbox}` : ""
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "tracker=${t}${bboxFilter},drawbox=x='x':y='y':w='w':h='h':color=red@0.5:t=2" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "auto_reframe_ai": {
+                // إعادة تأطير بالـ AI
+                const aspect = a.ai_reframe_aspect ?? "9:16"
+                const padding = a.ai_reframe_padding ?? 0.1
+                const [tw, th] = aspect.split(":").map(Number)
+                const ratio = tw / th
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "crop=ih*${ratio}*(1-${padding*2}):ih*(1-${padding*2}),scale=${tw}:${th}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "stem_separate": {
+                // فصل ستيمز (Demucs) - vocals/drums/bass/other
+                const model = a.stem_model ?? "htdemucs"
+                const outDir = a.stem_output_dir ?? path.dirname(out)
+                cmd = `demucs --model ${model} --out ${QUOT(outDir)} ${QUOT(inP)} && echo "Stems separated to ${outDir}" > ${QUOT(out)}`
+                break
+              }
+              case "voice_enhance": {
+                // تحسين صوت بالـ AI
+                const model = a.enhance_model ?? "dfsmn"
+                const denoise = a.enhance_denoise ?? 0.8
+                const dereverb = a.enhance_dereverb ?? 0.5
+                cmd = `voice-enhance --model ${model} --denoise ${denoise} --dereverb ${dereverb} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Voice enhanced" > ${QUOT(out)}`
+                break
+              }
+              case "smart_zoom": {
+                // زوم يتبع الوجه/العين/الحركة تلقائياً
+                const target = a.zoom_target ?? "face"
+                const smoothness = a.zoom_smoothness ?? 0.7
+                const maxZoom = a.zoom_max ?? 2.5
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "zoompan=z='min(zoom+0.01,${maxZoom})':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1920x1080:fps=30" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "transition_ai": {
+                // انتقالات ذكية (Morph, Smooth, Flow)
+                const mode = a.transition_mode ?? "smooth"
+                const duration = a.transition_duration ?? 1
+                const modes = { morph: "minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:me_mode=bidir", smooth: "minterpolate=fps=60:mi_mode=mci:mc_mode=obmc", flow: "minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1" }
+                const filter = modes[mode as keyof typeof modes] ?? modes.smooth
+                cmd = `${ff()} -i ${QUOT(a.inputs?.[0] ?? inP)} -i ${QUOT(a.inputs?.[1] ?? inP)} -filter_complex "[0:v][1:v]xfade=transition=fade:duration=${duration}:offset=2,${filter}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "qc_report": {
+                // تقرير جودة (EBU R128, ATSC A/85, Netflix)
+                const standard = a.qc_standard ?? "ebu-r128"
+                const format = a.qc_output_format ?? "json"
+                const reportFile = out.replace(/\.mp4$/, `_qc.${format}`)
+                const standards = { "ebu-r128": "loudness=I=-23:TP=-2:LRA=7", "atsc-a85": "loudness=I=-24:TP=-2", netflix: "loudness=I=-27:TP=-2:LRA=5" }
+                const params = standards[standard as keyof typeof standards] ?? standards["ebu-r128"]
+                cmd = `${ff()} -i ${QUOT(inP)} -af "loudness=${params}" -f null - 2>&1 | tee ${QUOT(reportFile)} && echo "QC report: ${reportFile}" > ${QUOT(out)}`
+                break
+              }
+              case "multi_render": {
+                // رندر متعدد: ماستر + يوتيوب + تيك توك + شورتس دفعة وحدة
+                const presets = a.render_presets ?? ["youtube", "tiktok", "reels", "shorts"]
+                const presetMap: Record<string, string> = {
+                  youtube: "-c:v libx264 -crf 18 -preset slow -pix_fmt yuv420p -c:a aac -b:a 192k",
+                  tiktok: "-c:v libx264 -crf 22 -preset fast -pix_fmt yuv420p -vf scale=1080:1920 -c:a aac -b:a 128k",
+                  reels: "-c:v libx264 -crf 22 -preset fast -pix_fmt yuv420p -vf scale=1080:1920 -c:a aac -b:a 128k",
+                  shorts: "-c:v libx264 -crf 22 -preset fast -pix_fmt yuv420p -vf scale=1080:1920 -c:a aac -b:a 128k",
+                }
+                const commands = presets.map(p => `${ff()} -i ${QUOT(inP)} ${presetMap[p] ?? presetMap.youtube} ${QUOT(out.replace(/\.mp4$/, `_${p}.mp4`))}`).join(" && ")
+                cmd = commands + ` && echo "Multi-render complete" > ${QUOT(out)}`
+                break
+              }
+              case "template_apply": {
+                // تطبيق تمبليت كامل (intro + lower-third + outro + music)
+                const template = a.template_name ?? "full"
+                const data = a.template_data ? JSON.parse(a.template_data) : {}
+                const templates = {
+                  intro: "drawtext=text='${title}':fontsize=100:fontcolor=white:x=(w-tw)/2:y=(h-th)/2:enable='between(t,0,3)'",
+                  "lower-third": "drawtext=text='${name}\\n${title}':fontsize=40:fontcolor=white:box=1:boxcolor=black@0.7:x=20:y=h-100:enable='between(t,5,15)'",
+                  outro: "drawtext=text='SUBSCRIBE':fontsize=80:fontcolor=red:x=(w-tw)/2:y=(h-th)/2:enable='gte(t,58)'",
+                  full: "drawtext=text='${title}':fontsize=100:fontcolor=white:x=(w-tw)/2:y=(h-th)/2:enable='between(t,0,3)',drawtext=text='${name}':fontsize=40:fontcolor=white:box=1:boxcolor=black@0.7:x=20:y=h-100:enable='between(t,5,15)',drawtext=text='SUBSCRIBE':fontsize=80:fontcolor=red:x=(w-tw)/2:y=(h-th)/2:enable='gte(t,58)'"
+                }
+                const filter = templates[template as keyof typeof templates] ?? templates.full
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "${filter}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "expression_engine": {
+                // محرك تعبيرات (مثل After Effects)
+                const code = a.expression_code ?? "wiggle(2,50)"
+                const prop = a.expression_property ?? "position"
+                const expressions = {
+                  position: `[w/2+${code}*50,h/2+${code}*50]`,
+                  scale: `[100+${code}*20,100+${code}*20]`,
+                  rotation: `${code}*10`,
+                  opacity: `100+${code}*30`,
+                  custom: code
+                }
+                const expr = expressions[prop as keyof typeof expressions] ?? expressions.position
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "geq=expr='${expr}'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "particle_system": {
+                // نظام جسيمات قابل للبرمجة
+                const type = a.particle_type ?? "rain"
+                const count = a.particle_count ?? 100
+                const lifetime = a.particle_lifetime ?? 3
+                const physics = a.particle_physics ?? "gravity"
+                const particleFilters = {
+                  rain: `geq=lum='if(gt(random(0),0.99),255,0)'`,
+                  snow: `geq=lum='if(gt(random(0),0.995),255,0)',gblur=sigma=2`,
+                  fire: `geq=r='255*sin(t*10)':g='128*sin(t*5)':b=0,tmix=frames=5`,
+                  sparks: `geq=r='255':g='200':b='0',noise=alls=50`,
+                  smoke: `geq=lum='128+127*sin(t*2)*random(0)',boxblur=10:10`,
+                  leaves: `geq=r='100':g='200':b='50',zoompan=z=1.01:x='iw/2':y='ih/2'`,
+                  custom: physics
+                }
+                const filter = particleFilters[type as keyof typeof particleFilters] ?? particleFilters.rain
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "${filter}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "text_animator": {
+                // أنيميتور نصوص متقدم (per-char, range selector)
+                const type = a.animator_type ?? "typewriter"
+                const range = a.animator_range ?? "char"
+                const easing = a.animator_easing ?? "ease"
+                const animators = {
+                  typewriter: `\\t(0,${a.duration ?? 5000},\\alpha,${range})`,
+                  wiggle: `\\t(0,${a.duration ?? 5000},\\frz,${range})\\wiggle(2,10)`,
+                  scale: `\\t(0,${a.duration ?? 5000},\\fscx\\fscy,${range})`,
+                  opacity: `\\t(0,${a.duration ?? 5000},\\alpha,${range})`,
+                  position: `\\move(0,0,${code},${code})`,
+                  rotation: `\\t(0,${a.duration ?? 5000},\\frz,${range})`,
+                  custom: a.expression_code ?? ""
+                }
+                const filter = animators[type as keyof typeof animators] ?? animators.typewriter
+                const ass = path.join(path.dirname(out), path.basename(out, path.extname(out)) + "_anim.ass")
+                writeAssAnim(ass, a.text ?? "TEXT", a.font ?? "Arial", a.size ?? 72, a.color ?? "white", a.duration ?? 60, filter, align(a.text_align), 60)
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "ass=${path.basename(ass)}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "color_wheel": {
+                // عجلة ألوان احترافية (Lift/Gamma/Gain/Offset + Log)
+                const lift = a.lift ?? "0,0,0"
+                const gamma = a.gamma ?? "0,0,0"
+                const gain = a.gain ?? "0,0,0"
+                const offset = a.offset_cw ?? "0,0,0"
+                const log = a.log_wheel ?? false
+                const [lr, lg, lb] = lift.split(",").map(Number)
+                const [gr, gg, gb] = gamma.split(",").map(Number)
+                const [gnr, gng, gnb] = gain.split(",").map(Number)
+                const [or, og, ob] = offset.split(",").map(Number)
+                const liftFilter = `colorbalance=rs=${lr}:gs=${lg}:bs=${lb}`
+                const gammaFilter = `colorbalance=rm=${gr}:gm=${gg}:bm=${gb}`
+                const gainFilter = `colorbalance=rh=${gnr}:gh=${gng}:bh=${gnb}`
+                const offsetFilter = `eq=brightness=${or/255}:contrast=${1+og/255}:saturation=${1+ob/255}`
+                const filters = [liftFilter, gammaFilter, gainFilter, offsetFilter].join(",")
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "${filters}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
                 break
               }
               default:

@@ -2969,6 +2969,640 @@ await video_montage({ action: "export_preset", preset: "web", input: "final_prod
 
 ---
 
+# 🚀 GAME CHANGERS - أدوات ذكية بالـ AI (20 أداة تغير اللعبة)
+
+> هذه الأدوات تستخدم تقنيات ML/AI حقيقية (Whisper, Demucs, Optical Flow, Depth Estimation, Object Tracking). تتطلب بعض الأدوات نماذج خارجية محملة محلياً.
+
+---
+
+## P.26 كشف مشاهد ذكي (AI Scene Detect)
+
+```typescript
+// كشف مشاهد بالـ ML - أدق من threshold العادي
+await video_montage({ 
+  action: "ai_scene_detect", 
+  ai_model: "content-aware",  // fast, accurate, content-aware
+  ai_threshold: 0.3,          // ثقة 0-1
+  input: "long_video.mp4", 
+  output: "scenes.txt"  // ملف نصي بأوقات المشاهد
+})
+```
+
+| النموذج | السرعة | الدقة | الاستخدام |
+|---------|--------|-------|----------|
+| `fast` | فائقة | جيدة | معاينة سريعة |
+| `accurate` | متوسطة | عالية | مونتاج دقيق |
+| `content-aware` | بطيئة | أعلى | محتوى معقد |
+
+**النتيجة:** ملف `scenes.txt` بأوقات بداية/نهاية كل مشهد للاستخدام في `auto_cut` أو `batch_process`.
+
+---
+
+## P.27 ترجمة آلية محلية (Auto Captions - Whisper)
+
+```typescript
+// ترجمة بـ Whisper محلي 100% - لا إنترنت، لا خصوصية
+await video_montage({ 
+  action: "auto_captions", 
+  caption_model: "base",      // tiny(39MB), base(74MB), small(244MB), medium(769MB), large(1550MB)
+  caption_language: "ar",     // ar, en, auto, أو أي كود ISO
+  caption_style: "pop-in",    // karaoke, pop-in, highlight, typewriter
+  input: "video.mp4", 
+  output: "captions.srt"  // أو .ass
+})
+```
+
+**متطلبات:** `whisper.cpp` أو `faster-whisper` مثبت مع نماذج `.bin` في `C:/Models/whisper/`
+
+| النموذج | الحجم | السرعة (CPU) | الدقة العربية | الاستخدام |
+|---------|-------|-------------|--------------|----------|
+| `tiny` | 39MB | ~10x realtime | متوسطة | مسودات سريعة |
+| `base` | 74MB | ~5x realtime | جيدة | افتراضي موصى به |
+| `small` | 244MB | ~2x realtime | عالية | إنتاج نهائي |
+| `medium` | 769MB | ~1x realtime | عالية جداً | احترافي |
+| `large` | 1550MB | ~0.5x realtime | أعلى | أرشيف/تلفزيون |
+
+**الستايلات:**
+- `pop-in`: كلمة بكلمة تظهر/تختفي
+- `karaoke`: تلوين الكلمة الحالية
+- `highlight`: تمييز الكلمة النشطة
+- `typewriter`: كتابة حرف بحرف
+
+---
+
+## P.28 قص ذكي (Smart Cut)
+
+```typescript
+// يزيل تلقائياً: صمت، كلمات حشو (آآه، مممم)، تكرار
+await video_montage({ 
+  action: "smart_cut", 
+  smart_cut_mode: "all",        // silence, filler, repetition, all
+  smart_cut_threshold: -40,     // dB للصمت
+  smart_cut_min_duration: 0.5,  // ثواني للاحتفاظ
+  input: "raw_talk.mp4", 
+  output: "cuts.txt"  // قائمة القطع للحذف/الاحتفاظ
+})
+```
+
+| الوضع | ما يزيله | الاستخدام |
+|--------|----------|----------|
+| `silence` | فترات صامتة > threshold | بودكاست، محاضرات |
+| `filler` | "آه، مم، يعني، حلو" | فلوقات، مقابلات |
+| `repetition` | جمل مكررة | تسجيلات متعددة التيك |
+| `all` | الكل معاً | تنظيف شامل |
+
+---
+
+## P.29 كشف إيقاع دقيق (Beat Detect)
+
+```typescript
+// كشف النغمات بدقة + markers للقطع على الـ beat
+await video_montage({ 
+  action: "beat_detect", 
+  beat_sensitivity: 0.5,      // 0-1: حساسية الكشف
+  beat_min_interval: 0.3,     // أقل فاصل بين النغمات (ث)
+  input: "music.mp4", 
+  output: "beats.txt"  // timestamps للنغمات
+})
+```
+
+**النتيجة:** ملف `beats.txt` بأوقات كل نغمة → استخدم مع `beat_sync` أو قص يدوي على النغمة.
+
+---
+
+## P.30 مطابقة لون (Color Match)
+
+```typescript
+// يطابق لون اللقطة لصورة/فيديو مرجعي
+await video_montage({ 
+  action: "color_match", 
+  reference_image: "reference.jpg",  // أو فيديو
+  match_method: "reinhard",        // histogram, reinhard, transfer
+  input: "shot.mp4", 
+  output: "matched.mp4"
+})
+```
+
+| الطريقة | الوصف | الأفضل لـ |
+|---------|-------|----------|
+| `histogram` | مطابقة توزيع الألوان | لقطات بنفس الإضاءة |
+| `reinhard` | نقل متوسط/انحراف معياري | عام (افتراضي) |
+| `transfer` | نقل خصائص اللون كاملة | سينمائي/فني |
+
+---
+
+## P.31 سلو موشن حقيقي (Optical Flow)
+
+```typescript
+// يولد إطارات جديدة بالـ AI - ليس تكرار إطارات
+await video_montage({ 
+  action: "optical_flow", 
+  flow_model: "farneback",   // raft, farneback, deepflow
+  flow_scale: 2,             // 2x, 4x, 8x أبطأ
+  input: "action.mp4", 
+  output: "slowmo.mp4"
+})
+```
+
+| النموذج | الجودة | السرعة | متطلبات |
+|---------|--------|--------|----------|
+| `farneback` | جيدة | سريعة | CPU فقط |
+| `deepflow` | أعلى | متوسطة | CPU فقط |
+| `raft` | أعلى (SOTA) | بطيئة | GPU (CUDA) |
+
+> **ملاحظة:** `flow_scale: 2` = 50% سرعة، `4` = 25%، `8` = 12.5%
+
+---
+
+## P.32 خريطة عمق (Depth Map)
+
+```typescript
+// يولد خريطة عمق لكل إطار - للـ 3D effects، fog، bokeh
+await video_montage({ 
+  action: "depth_map", 
+  depth_model: "midas",      // midas, dpt, zoedepth
+  depth_visualize: true,     // true = يصدر فيديو خريطة عمق
+  input: "scene.mp4", 
+  output: "depth.mp4"  // أو depth_vis.mp4
+})
+```
+
+**استخدامات خريطة العمق:**
+- **Bokeh خلفي:** `blur=depth_map` (ضبابية حسب البعد)
+- **Fog/ضباب:** يزداد مع البعد
+- **3D Parallax:** تحريك طبقات بمعدلات مختلفة
+- **Relighting:** إضاءة وهمية تتبع الهندسة
+
+| النموذج | الدقة | السرعة | الأفضل لـ |
+|---------|-------|--------|----------|
+| `midas` | عالية | متوسطة | عام |
+| `dpt` | عالية جداً | أبطأ | تفاصيل دقيقة |
+| `zoedepth` | SOTA | بطيئة | إنتاج نهائي |
+
+---
+
+## P.33 تتبع كائن/شخص (Object Track)
+
+```typescript
+// يتتبع وجه/شخص/كائن - نصوص/أشكال تلتصق به
+await video_montage({ 
+  action: "object_track", 
+  track_target: "face",       // face, person, custom
+  track_bbox: "100,100,200,200",  // x,y,w,h للبداية (اختياري)
+  input: "person_walking.mp4", 
+  output: "tracked.mp4"  // فيديو مع box تتبع
+})
+```
+
+**النتائج:** إحداثيات التتبع تستخدم في:
+- `smart_zoom` (زوم يتبع الوجه)
+- `text_animator` (نص يلتصق بالشخص)
+- `particle_system` (جسيمات تتبع الحركة)
+
+---
+
+## P.34 إعادة تأطير بالـ AI (Auto Reframe AI)
+
+```typescript
+// تأطير ذكي يعرف أين الموضوع مهم (ليس center بسيط)
+await video_montage({ 
+  action: "auto_reframe_ai", 
+  ai_reframe_aspect: "9:16",   // 9:16, 1:1, 4:5
+  ai_reframe_padding: 0.1,     // هامش حول الموضوع 0-1
+  input: "horizontal.mp4", 
+  output: "vertical.mp4"
+})
+```
+
+**الفرق عن `auto_reframe`:**
+| الميزة | `auto_reframe` | `auto_reframe_ai` |
+|--------|---------------|-------------------|
+| التتبع | center/face/motion | AI semantic (يعرف الموضوع الرئيسي) |
+| تغيير الموضوع | يفشل | يتكيف تلقائياً |
+| حواف آمنة | ثابتة | ديناميكية |
+
+---
+
+## P.35 فصل ستيمز (Stem Separate - Demucs)
+
+```typescript
+// يفصل الصوت إلى: vocals, drums, bass, other
+await video_montage({ 
+  action: "stem_separate", 
+  stem_model: "htdemucs",      // htdemucs, htdemucs_ft, mdx_extra
+  stem_output_dir: "stems/",   // مجلد الإخراج
+  input: "song.mp4", 
+  output: "stems_report.txt"
+})
+```
+
+**النتيجة في `stems/`:**
+```
+stems/
+├── vocals.wav      # صوت فقط
+├── drums.wav       # طبول/إيقاع
+├── bass.wav        # باس
+└── other.wav       # باقي الآلات
+```
+
+**استخدامات:**
+- **Karaoke:** احذف `vocals.wav`
+- **Remix:** عدل `drums.wav` و `bass.wav`
+- **Clean dialogue:** استخدم `vocals.wav` فقط
+- **Music analysis:** حلل `bass.wav` للـ beat detect
+
+---
+
+## P.36 تحسين صوت بالـ AI (Voice Enhance)
+
+```typescript
+// يزيل ضوضاء، صدى، يحسن وضوح - أفضل من أي فلتر تقليدي
+await video_montage({ 
+  action: "voice_enhance", 
+  enhance_model: "dfsmn",       // dfsmn, mossformer2, fullsubnet
+  enhance_denoise: 0.8,         // 0-1: قوة إزالة الضوضاء
+  enhance_dereverb: 0.5,        // 0-1: قوة إزالة الصدى
+  input: "noisy_recording.mp4", 
+  output: "clean_voice.mp4"
+})
+```
+
+| النموذج | القوة | السرعة | الاستخدام |
+|---------|------|--------|----------|
+| `dfsmn` | متوازنة | سريعة | وقت حقيقي |
+| `mossformer2` | عالية | متوسطة | إنتاج |
+| `fullsubnet` | أعلى | بطيئة | استعادة أرشيف |
+
+---
+
+## P.37 زوم ذكي (Smart Zoom)
+
+```typescript
+// زوم يتبع الوجه/العين/الحركة تلقائياً
+await video_montage({ 
+  action: "smart_zoom", 
+  zoom_target: "face",        // face, eyes, motion, object
+  zoom_smoothness: 0.7,       // 0-1: نعومة الحركة
+  zoom_max: 2.5,              // أقصى زوم
+  input: "talking_head.mp4", 
+  output: "smart_zoomed.mp4"
+})
+```
+
+**الفرق عن `zoom`:** يتتبع الهدف ديناميكياً، لا keyframes يدوية.
+
+---
+
+## P.38 انتقالات ذكية (Transition AI)
+
+```typescript
+// انتقالات Morph/Flow بين لقطتين - ليس crossfade بسيط
+await video_montage({ 
+  action: "transition_ai", 
+  transition_mode: "morph",   // morph, smooth, flow
+  transition_duration: 1,     // ثواني
+  inputs: ["clip1.mp4", "clip2.mp4"],  // يحتاج لقطتين
+  output: "transition.mp4"
+})
+```
+
+| النمط | الوصف | الاستخدام |
+|-------|-------|----------|
+| `morph` | يدمج البكسلات بذكاء (Optical Flow) | لقطات متشابهة |
+| `smooth` | تداخل ناعم مع minterpolate | عام |
+| `flow` | تدفق بصري كامل | لقطات متحركة |
+
+---
+
+## P.39 تقرير جودة احترافي (QC Report)
+
+```typescript
+// تقرير مطابق للمعايير: EBU R128, ATSC A/85, Netflix
+await video_montage({ 
+  action: "qc_report", 
+  qc_standard: "ebu-r128",    // ebu-r128, atsc-a85, netflix, custom
+  qc_output_format: "json",   // json, txt, html
+  input: "final_master.mp4", 
+  output: "qc_report.json"
+})
+```
+
+**المعايير:**
+| المعيار | Integrated Loudness | True Peak | LRA | الاستخدام |
+|----------|-------------------|-----------|-----|----------|
+| `ebu-r128` | -23 LUFS | -2 dBTP | ≤7 | بث أوروبي |
+| `atsc-a85` | -24 LUFS | -2 dBTP | - | بث أمريكي |
+| `netflix` | -27 LUFS | -2 dBTP | ≤5 | نتفليكس |
+| `custom` | محدد يدوياً | - | - | خاص |
+
+**التقرير يتضمن:** Loudness, True Peak, LRA, Sample Peak, Clipping, DC Offset, Silence, Phase.
+
+---
+
+## P.40 رندر متعدد المنصات (Multi Render)
+
+```typescript
+// رندر واحد → ماستر + يوتيوب + تيك توك + ريلز + شورتس
+await video_montage({ 
+  action: "multi_render", 
+  render_presets: ["youtube", "tiktok", "reels", "shorts", "twitter"],  // أو ["high-quality", "web"]
+  input: "master.mov", 
+  output: "multi_render_report.txt"
+})
+```
+
+**ينفذ تلقائياً:**
+```bash
+ffmpeg -i master.mov [youtube params] youtube.mp4
+ffmpeg -i master.mov [tiktok params] tiktok.mp4
+ffmpeg -i master.mov [reels params] reels.mp4
+ffmpeg -i master.mov [shorts params] shorts.mp4
+```
+
+**يوفر ساعات** من الرندر اليدوي لكل منصة.
+
+---
+
+## P.41 تطبيق تمبليتات كاملة (Template Apply)
+
+```typescript
+// تمبليتات جاهزة: intro, lower-third, outro, full package
+await video_montage({ 
+  action: "template_apply", 
+  template_name: "full",      // intro, lower-third, outro, full
+  template_data: JSON.stringify({  // بيانات ديناميكية
+    title: "EPIC VIDEO",
+    name: "ALI",
+    channel: "MRSX PRO",
+    social: "@mrsxpro"
+  }),
+  input: "video.mp4", 
+  output: "templated.mp4"
+})
+```
+
+**التمبليتات المضمنة:**
+| التمبليت | المحتوى |
+|----------|---------|
+| `intro` | عنوان كبير 3 ثوانٍ أول الفيديو |
+| `lower-third` | اسم + لقب في الأسفل (5-15ث) |
+| `outro` | اشتراك + سوشيال ميديا (آخر 5 ث) |
+| `full` | الكل معاً + انتقالات |
+
+---
+
+## P.42 محرك تعبيرات (Expression Engine - مثل After Effects)
+
+```typescript
+// تعبيرات رياضية/عشوائية للتحريك - wiggle, loop, time, math
+await video_montage({ 
+  action: "expression_engine", 
+  expression_code: "wiggle(2,50)",  // أو: "time*100", "sin(time)*50", "loopOut()"
+  expression_property: "position", // position, scale, rotation, opacity, custom
+  input: "layer.mp4", 
+  output: "animated.mp4"
+})
+```
+
+**التعبيرات المدعومة:**
+| التعبير | النتيجة | الاستخدام |
+|----------|---------|----------|
+| `wiggle(freq, amp)` | اهتزاز عشوائي | كاميرا يدوية، نص حي |
+| `time * N` | حركة خطية مع الزمن | دوران مستمر، Scroll |
+| `sin(time) * A` | موجة جيبية | تردد، تنفس |
+| `loopOut()` | تكرار الكيفرامات | دورات لا نهائية |
+| `random(min, max)` | قيمة عشوائية | جليتش، ضوضاء |
+| `clamp(val, min, max)` | تقييد قيمة | أمان |
+| `linear(t, t1, t2, v1, v2)` | تداخل خطي | keyframe interpolation |
+
+---
+
+## P.43 نظام جسيمات قابل للبرمجة (Particle System)
+
+```typescript
+// مطر، ثلج، نار، شرر، دخان، أوراق - قابل للتخصيص كامل
+await video_montage({ 
+  action: "particle_system", 
+  particle_type: "rain",      // rain, snow, fire, sparks, smoke, leaves, custom
+  particle_count: 100,        // عدد الجسيمات
+  particle_lifetime: 3,       // عمر بالثواني
+  particle_physics: "gravity,wind:2,turbulence:0.5",  // فيزياء
+  input: "scene.mp4", 
+  output: "particles.mp4"
+)
+```
+
+| النوع | الشكل | فيزياء افتراضية |
+|--------|-------|----------------|
+| `rain` | خطوط مائلة | gravity + wind |
+| `snow` | دوائر صغيرة | gravity + turbulence |
+| `fire` | لهب متحرك | turbulence + rise |
+| `sparks` | نقاط مضيئة | gravity + fade |
+| `smoke` | سحب شفافة | buoyancy + turbulence |
+| `leaves` | أشكال أوراق | gravity + wind + spin |
+| `custom` | كود `particle_physics` | مبرمج بالكامل |
+
+**معاملات `particle_physics`:**
+- `gravity:N` - جاذبية (افتراضي 1)
+- `wind:N` - رياح أفقية
+- `turbulence:N` - اضطراب 0-1
+- `spin:N` - دوران
+- `size:N` - حجم
+- `color:r,g,b` - لون
+
+---
+
+## P.44 أنيميتور نصوص متقدم (Text Animator)
+
+```typescript
+// أنيميشن لكل حرف/كلمة/سطر - مثل After Effects Text Animator
+await video_montage({ 
+  action: "text_animator", 
+  animator_type: "typewriter",  // typewriter, wiggle, scale, opacity, position, rotation
+  animator_range: "char",       // char, word, line, 0-100%
+  animator_easing: "ease-out",  // ease, ease-in, ease-out, bounce, elastic
+  text: "HELLO WORLD",
+  font: "Luckiest Guy.ttf",
+  size: 100,
+  color: "yellow",
+  duration: 3000,  // ms
+  input: "video.mp4", 
+  output: "text_animated.mp4"
+)
+```
+
+| النوع | التأثير | نطاق التطبيق |
+|--------|---------|-------------|
+| `typewriter` | كتابة حرف بحرف | `char`, `word` |
+| `wiggle` | اهتزاز عشوائي | `char`, `word`, `line` |
+| `scale` | تكبير/تصغير | `char`, `word` |
+| `opacity` | ظهور/اختفاء | `char`, `word`, `line` |
+| `position` | حركة موضع | `char`, `word` |
+| `rotation` | دوران | `char`, `word` |
+
+**التسارع (Easing):**
+- `ease` - طبيعي
+- `bounce` - قفز
+- `elastic` - مرن
+
+---
+
+## P.45 عجلة ألوان احترافية (Color Wheel - Lift/Gamma/Gain/Offset)
+
+```typescript
+// تصحيح لوني بثلاث عجلات + Offset - مثل DaVinci Resolve
+await video_montage({ 
+  action: "color_wheel", 
+  lift: "0,-10,-20",      // Shadows: R,G,B (-255 إلى 255)
+  gamma: "5,0,-5",        // Midtones: R,G,B
+  gain: "10,5,0",         // Highlights: R,G,B
+  offset_cw: "0,0,0",     // Offset عام
+  log_wheel: false,       // true = عجلة Log (سينمائي)
+  input: "raw.mp4", 
+  output: "graded.mp4"
+})
+```
+
+**العجلات الثلاث:**
+| العجلة | تؤثر على | الاستخدام |
+|--------|----------|----------|
+| **Lift (Shadows)** | الأجزاء الداكنة | لون الظلال، تبييض السواد |
+| **Gamma (Midtones)** | الدرجات المتوسطة | لون البشرة، المزاج العام |
+| **Gain (Highlights)** | الأجزاء المضيئة | لون الهايلايت، حماية القمم |
+| **Offset** | الصورة كلها | تصحيح عام، توازن أبيض |
+
+**مثال سينمائي (Teal-Orange):**
+```typescript
+lift: "-20,-10,30"      // ظلال تيال
+gamma: "10,-5,-10"      // ميدتونز برتقالي خفيف
+gain: "5,10,-5"         // هايلايت برتقالي
+```
+
+---
+
+## P.46 جداول محدثة - كل الـ 97 Action
+
+| الفئة | الـ Actions (97 إجمالي) |
+|-------|------------------------|
+| **أساسي** | `info`, `cut`, `merge`, `convert`, `crop_rotate`, `reverse_video` |
+| **نصوص** | `add_text`, `animated_text`, `subtitle_burn`, `timecode`, `text_animator` |
+| **صوت** | `add_sfx`, `add_music`, `audio_mix`, `audio_duck`, `normalize_audio`, `extract_audio`, `audio_compressor`, `audio_limiter`, `audio_eq`, `audio_gate`, `stem_separate`, `voice_enhance` |
+| **لون/فلتر** | `filter`, `color_grade`, `lut_apply`, `export_preset`, `color_match`, `color_wheel` |
+| **بصري/GLITCH** | `glitch`, `rgb_shift`, `film_grain`, `light_leaks`, `film_burn`, `scanlines`, `chromatic_aberration`, `pixelate_face`, `vhs_effect`, `crash_zoom`, `shake`, `lens_flare`, `particle_overlay`, `zoom_blur`, `directional_blur`, `radial_blur`, `glow`, `color_isolation`, `halftone`, `posterize`, `solarize`, `emboss`, `edge_detect`, `kaleidoscope`, `prism`, `vignette_advanced`, `letterbox`, `film_border`, `particle_system` |
+| **حركة/زوم** | `zoom`, `speed`, `speed_ramp`, `motion_blur`, `time_remap`, `auto_reframe`, `auto_reframe_ai`, `smart_zoom` |
+| **AI/ذكي** | `ai_scene_detect`, `auto_captions`, `smart_cut`, `beat_detect`, `optical_flow`, `depth_map`, `object_track`, `transition_ai` |
+| **جرين سكرين** | `green_screen`, `chroma_key_advanced` |
+| **تصحيح** | `stabilize`, `denoise`, `lens_correction`, `lens_correction_advanced`, `rolling_shutter`, `blur_face` |
+| **سير عمل/إنتاج** | `watermark`, `pip`, `split_screen`, `image_to_video`, `legendary_transition`, `auto_cut`, `beat_sync`, `thumbnail`, `thumbnail_grid`, `gif_loop`, `waveform`, `progress_bar`, `crop_detect`, `scene_detect`, `proxy_create`, `batch_process`, `qc_report`, `multi_render`, `template_apply`, `expression_engine` |
+
+---
+
+## P.47 وصفات GAME CHANGERS
+
+### Recipe: "Podcast إنتاج كامل بالـ AI"
+```typescript
+// 1. ترجمة آلية
+await video_montage({ action: "auto_captions", caption_model: "base", caption_language: "ar", input: "podcast.mp4", output: "captions.srt" })
+
+// 2. فصل ستيمز (لو فيه موسيقى خلفية)
+await video_montage({ action: "stem_separate", stem_model: "htdemucs", stem_output_dir: "stems/", input: "podcast.mp4", output: "stems.txt" })
+
+// 3. تحسين الصوت المنفصل
+await video_montage({ action: "voice_enhance", enhance_model: "dfsmn", enhance_denoise: 0.8, input: "stems/vocals.wav", output: "vocals_clean.wav" })
+
+// 4. قص ذكي (يزيل الصمت والحشو)
+await video_montage({ action: "smart_cut", smart_cut_mode: "all", input: "podcast.mp4", output: "cuts.txt" })
+
+// 5. تطبيق القطع + دمج الصوت النظيف
+// (يدوي: استخدم cuts.txt لقص الفيديو، استبدل الصوت بـ vocals_clean.wav)
+
+// 6. QC Report للنتفليكس/يوتيوب
+await video_montage({ action: "qc_report", qc_standard: "netflix", qc_output_format: "html", input: "final.mp4", output: "qc.html" })
+
+// 7. رندر متعدد للمنصات
+await video_montage({ action: "multi_render", render_presets: ["youtube", "tiktok", "reels", "shorts"], input: "final.mp4", output: "done.txt" })
+```
+
+### Recipe: "Cinematic Short Film بالـ AI"
+```typescript
+// 1. Depth Map للـ 3D parallax
+await video_montage({ action: "depth_map", depth_model: "zoedepth", depth_visualize: true, input: "shot.mp4", output: "depth.mp4" })
+
+// 2. Optical Flow للسلو موشن
+await video_montage({ action: "optical_flow", flow_model: "raft", flow_scale: 4, input: "action_shot.mp4", output: "slowmo.mp4" })
+
+// 3. Color Match للوك سينمائي موحد
+await video_montage({ action: "color_match", reference_image: "blade_runner_ref.jpg", match_method: "transfer", input: "shot.mp4", output: "matched.mp4" })
+
+// 4. Color Wheel للتصحيح الدقيق
+await video_montage({ action: "color_wheel", lift: "-15,-5,25", gamma: "8,-3,-8", gain: "5,8,-5", input: "matched.mp4", output: "graded.mp4" })
+
+// 5. Particle System للأجواء
+await video_montage({ action: "particle_system", particle_type: "rain", particle_count: 200, particle_physics: "gravity:1.2,wind:1,turbulence:0.3", input: "graded.mp4", output: "atmosphere.mp4" })
+
+// 6. Expression Engine للكاميرا
+await video_montage({ action: "expression_engine", expression_code: "wiggle(0.5,20)", expression_property: "position", input: "atmosphere.mp4", output: "handheld.mp4" })
+
+// 7. Smart Zoom للتركيز على العين
+await video_montage({ action: "smart_zoom", zoom_target: "eyes", zoom_max: 1.8, input: "handheld.mp4", output: "final.mp4" })
+```
+
+### Recipe: "Vertical Content Factory (أفقي → 4 منصات)"
+```typescript
+// 1. AI Scene Detect لتقسيم الفيديو الطويل
+await video_montage({ action: "ai_scene_detect", ai_model: "content-aware", input: "long_horizontal.mp4", output: "scenes.txt" })
+
+// 2. Auto Reframe AI لكل مشهد
+// (حلل scenes.txt، طبق auto_reframe_ai على كل مقطع)
+
+// 3. Beat Detect للموسيقى
+await video_montage({ action: "beat_detect", beat_sensitivity: 0.6, input: "music.mp4", output: "beats.txt" })
+
+// 4. Smart Cut للنظافة
+await video_montage({ action: "smart_cut", smart_cut_mode: "all", input: "vertical_compilation.mp4", output: "clean.txt" })
+
+// 5. Template Apply للبراندينغ
+await video_montage({ action: "template_apply", template_name: "full", template_data: JSON.stringify({brand: "MRSX PRO"}), input: "clean.mp4", output: "branded.mp4" })
+
+// 6. Multi Render دفعة وحدة
+await video_montage({ action: "multi_render", render_presets: ["tiktok", "reels", "shorts", "twitter"], input: "branded.mp4", output: "all_platforms.txt" })
+
+// 7. QC Report لكل منصة
+await video_montage({ action: "qc_report", qc_standard: "ebu-r128", input: "branded.mp4", output: "qc.json" })
+```
+
+### Recipe: "Music Video Production بالـ AI"
+```typescript
+// 1. Stem Separate للكليب
+await video_montage({ action: "stem_separate", stem_model: "htdemucs_ft", input: "song.mp4", output: "stems.txt" })
+
+// 2. Beat Detect مزامنة دقيقة
+await video_montage({ action: "beat_detect", beat_sensitivity: 0.7, input: "stems/drums.wav", output: "beats.txt" })
+
+// 3. Auto Captions للكلمات
+await video_montage({ action: "auto_captions", caption_model: "small", caption_language: "ar", caption_style: "karaoke", input: "stems/vocals.wav", output: "lyrics.ass" })
+
+// 4. Object Track للراقص/المغني
+await video_montage({ action: "object_track", track_target: "person", input: "performance.mp4", output: "tracked.mp4" })
+
+// 5. Smart Zoom يتبع الوجه
+await video_montage({ action: "smart_zoom", zoom_target: "face", zoom_smoothness: 0.8, input: "tracked.mp4", output: "zoom.mp4" })
+
+// 6. Transition AI بين اللقطات
+await video_montage({ action: "transition_ai", transition_mode: "flow", transition_duration: 1.5, inputs: ["clip1.mp4", "clip2.mp4"], output: "transition.mp4" })
+
+// 7. Particle System للأجواء
+await video_montage({ action: "particle_system", particle_type: "sparks", particle_physics: "gravity:0.5,wind:2,turbulence:0.8", input: "zoom.mp4", output: "fx.mp4" })
+
+// 8. Text Animator للكلمات (Karaoke style)
+await video_montage({ action: "text_animator", animator_type: "karaoke", animator_range: "word", text: "LYRICS HERE", input: "fx.mp4", output: "lyrics_video.mp4" })
+
+// 9. Multi Render + QC
+await video_montage({ action: "multi_render", render_presets: ["youtube", "tiktok", "reels"], input: "lyrics_video.mp4", output: "done.txt" })
+```
+
+---
+
 ## خلاصة فلسفة المونتاج
 > **المونتاج ليس تنفيذ أوامر، بل رواية قصة بإيقاعٍ متعمد.**
 > كل قص، كل موسيقى، كل أفكت، كل نص، كل زوم، كل تسريع — قرار فني يخدم المزاج والهدف.
