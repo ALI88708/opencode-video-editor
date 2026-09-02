@@ -2306,9 +2306,242 @@ await video_montage({ action: "zoom", zoom_type: "in", zoom: 1.5, zoom_duration:
 // 4. Blur Face للخصوصية
 await video_montage({ action: "blur_face", blur_strength: 25, input: "zoom.mp4", output: "final.mp4" })
 ```
- 
+
+### P.10 وصفات متقدمة للمؤثرات الجديدة (Advanced Visual Effect Recipes)
+
+#### 5. "Action/Adrenaline" - Zoom Blur + Directional Blur
+```typescript
+// للمشاهد السريعة: مطاردات، قفزات، هجمات
+await video_montage({ action: "zoom_blur", zoom: 2.5, frames: 8, center_x: 0.5, center_y: 0.5, input: "action.mp4", output: "zb.mp4" })
+await video_montage({ action: "directional_blur", angle: 0, distance: 30, input: "zb.mp4", output: "db.mp4" })
+await video_montage({ action: "color_grade", color_preset: "teal-orange", input: "db.mp4", output: "final.mp4" })
+await video_montage({ action: "add_sfx", category: "transition", sfx: "Whoosh 1.mp3", at: 0, input: "final.mp4", output: "done.mp4" })
+```
+
+#### 6. "Horror/Thriller" - Glow + Color Isolation + Vignette
+```typescript
+// للرعب: توهج العيون، عزل الأحمر للدم، فينيت داكن
+await video_montage({ action: "glow", threshold: 0.8, radius: 30, input: "horror.mp4", output: "glow.mp4" })
+await video_montage({ action: "color_isolation", color: "red", tolerance: 0.15, input: "glow.mp4", output: "iso.mp4" })
+await video_montage({ action: "vignette_advanced", shape: "ellipse", intensity: 0.7, radius: 0.6, input: "iso.mp4", output: "vig.mp4" })
+await video_montage({ action: "add_sfx", category: "suspense", sfx: "Heartbeat.mp3", at: 0, input: "vig.mp4", output: "final.mp4" })
+```
+
+#### 7. "Retro/VHS Aesthetic" - Halftone + Posterize + Scanlines
+```typescript
+// ستايل كاريكاتير/كوميكس قديم
+await video_montage({ action: "halftone", size: 6, input: "retro.mp4", output: "ht.mp4" })
+await video_montage({ action: "posterize", levels: 6, input: "ht.mp4", output: "post.mp4" })
+await video_montage({ action: "scanlines", input: "post.mp4", output: "sl.mp4" })
+await video_montage({ action: "vhs_effect", input: "sl.mp4", output: "final.mp4" })
+await video_montage({ action: "add_sfx", category: "meme", sfx: "Minecraft_oof.mp3", at: 2, input: "final.mp4", output: "done.mp4" })
+```
+
+#### 8. "Artistic/Experimental" - Solarize + Emboss + Edge Detect
+```typescript
+// فيديو فنّي تجريبي
+await video_montage({ action: "solarize", threshold: 100, input: "art.mp4", output: "sol.mp4" })
+await video_montage({ action: "emboss", input: "sol.mp4", output: "emb.mp4" })
+await video_montage({ action: "edge_detect", input: "emb.mp4", output: "edg.mp4" })
+await video_montage({ action: "color_grade", color_preset: "film-noir", input: "edg.mp4", output: "final.mp4" })
+```
+
+#### 9. "Cinematic Letterbox + Film Border" - سينمائي حقيقي
+```typescript
+// للتصدير النهائي: أشرطة سوداء + حدود فيلم 35mm
+await video_montage({ action: "letterbox", aspect: "2.35:1", input: "cinematic.mp4", output: "lb.mp4" })
+await video_montage({ action: "film_border", style: "35mm", input: "lb.mp4", output: "final.mp4" })
+await video_montage({ action: "add_music", music: "cinematic_theme.mp3", volume: 0.25, input: "final.mp4", output: "done.mp4" })
+```
+
+#### 10. "Sci-Fi/Cyberpunk" - Prism + Chromatic Aberration + Glitch
+```typescript
+// ستايل سيبربانك: انقسام ألوان، غلتيش، بريزم
+await video_montage({ action: "prism", offset: 8, input: "scifi.mp4", output: "pri.mp4" })
+await video_montage({ action: "chromatic_aberration", amount: 8, input: "pri.mp4", output: "ca.mp4" })
+await video_montage({ action: "glitch", intensity: 0.4, input: "ca.mp4", output: "gl.mp4" })
+await video_montage({ action: "color_grade", color_preset: "hdr", input: "gl.mp4", output: "grade.mp4" })
+await video_montage({ action: "add_sfx", category: "transition", sfx: "Explode1.mp3", at: 0, input: "grade.mp4", output: "final.mp4" })
+```
+
+#### 11. "Kaleidoscope Transition" - انتقال فنّي
+```typescript
+// انتقال إبداعي بين مشهدين
+await video_montage({ action: "kaleidoscope", segments: 12, input: "scene1.mp4", output: "kal1.mp4" })
+await video_montage({ action: "kaleidoscope", segments: 12, input: "scene2.mp4", output: "kal2.mp4" })
+await video_montage({ action: "legendary_transition", transition_type: "circle", transition_duration: 0.8, input: "kal1.mp4", inputs: ["kal2.mp4"], output: "final.mp4" })
+```
+
+### P.11 سير عمل مدمجة (Visual + Audio Integrated Workflows)
+
+#### Workflow A: Gaming Montage كامل (90 ثانية)
+```typescript
+// 1. استخراج أفضل اللحظات
+await video_montage({ action: "scene_detect", scene_threshold: 0.4, input: "raw_gameplay.mp4", output: "scenes.json" })
+
+// 2. قص اللقطات (3-5 ثواني لكل)
+await video_montage({ action: "auto_cut", cut_threshold: 0.3, min_scene: 2, input: "raw_gameplay.mp4", output: "clips/" })
+
+// 3. لكل لقطة: Zoom Punch + Color Grade + SFX
+for (const clip of clips) {
+  await video_montage({ action: "zoom", zoom_type: "punch", zoom: 1.5, zoom_duration: 0.3, input: clip, output: `z_${clip}` })
+  await video_montage({ action: "color_grade", color_preset: "teal-orange", input: `z_${clip}`, output: `g_${clip}` })
+  await video_montage({ action: "add_sfx", category: "suspense", sfx: "Impact (1).wav", at: 0, input: `g_${clip}`, output: `s_${clip}` })
+}
+
+// 4. Beat Sync على الموسيقى
+await video_montage({ action: "beat_sync", bpm: 140, input: "music.mp3", output: "beat_points.json" })
+
+// 5. دمج مع انتقالات أسطورية
+await video_montage({ action: "legendary_transition", transition_type: "flash", transition_duration: 0.2, input: "s_1.mp4", inputs: ["s_2.mp4"], output: "merge1.mp4" })
+// ... كرر لكل اللقطات
+
+// 6. Progress Bar + Waveform للشورتس
+await video_montage({ action: "progress_bar", progress_color: "red", progress_height: 6, input: "merged.mp4", output: "pb.mp4" })
+await video_montage({ action: "waveform", waveform_color: "cyan", waveform_bg: "black@0.3", input: "pb.mp4", output: "wb.mp4" })
+
+// 7. Normalize Audio للمنصات
+await video_montage({ action: "normalize_audio", target_lufs: -14, true_peak: -1, input: "wb.mp4", output: "final.mp4" })
+
+// 8. Thumbnail Grid للمعاينة
+await video_montage({ action: "thumbnail_grid", input: "final.mp4", output: "thumb_grid.jpg" })
+```
+
+#### Workflow B: Podcast/Interview احترافي
+```typescript
+// 1. استخراج الصوت وتنظيفه
+await video_montage({ action: "extract_audio", format: "wav", input: "podcast.mp4", output: "audio.wav" })
+await video_montage({ action: "normalize_audio", target_lufs: -16, true_peak: -1, input: "audio.wav", output: "audio_norm.wav" })
+
+// 2. Auto Cut على الصمت
+await video_montage({ action: "auto_cut", cut_threshold: 0.2, min_scene: 3, input: "podcast.mp4", output: "cuts/" })
+
+// 3. Audio Duck للموسيقى تحت الكلام
+await video_montage({ action: "audio_duck", duck_amount: 0.15, duck_attack: 0.1, duck_release: 0.5, music: "bg_music.mp3", input: "podcast.mp4", output: "ducked.mp4" })
+
+// 4. Waveform + Timecode + Progress Bar
+await video_montage({ action: "waveform", waveform_color: "white", waveform_bg: "black@0.4", input: "ducked.mp4", output: "wv.mp4" })
+await video_montage({ action: "timecode", input: "wv.mp4", output: "tc.mp4" })
+await video_montage({ action: "progress_bar", progress_color: "blue", progress_height: 3, input: "tc.mp4", output: "pb.mp4" })
+
+// 5. Subtitle Burn للنصوص
+await video_montage({ action: "subtitle_burn", srt: "captions.srt", input: "pb.mp4", output: "sub.mp4" })
+
+// 5. تصدير نهائي
+await video_montage({ action: "normalize_audio", target_lufs: -16, input: "sub.mp4", output: "final_podcast.mp4" })
+```
+
+#### Workflow C: Short/Reel/TikTok (60 ثانية)
+```typescript
+// 1. تحويل لـ Vertical 9:16
+await video_montage({ action: "crop_rotate", crop_type: "vertical-reels", input: "horizontal.mp4", output: "vertical.mp4" })
+
+// 2. Vibrant + Speed Ramp
+await video_montage({ action: "filter", effect: "vibrant", input: "vertical.mp4", output: "vib.mp4" })
+await video_montage({ action: "speed_ramp", speed_points: "0:1,2:2,4:0.5,6:1", input: "vib.mp4", output: "ramp.mp4" })
+
+// 3. Progress Bar + Waveform
+await video_montage({ action: "progress_bar", progress_color: "red", progress_height: 5, input: "ramp.mp4", output: "pb.mp4" })
+await video_montage({ action: "waveform", waveform_color: "yellow", waveform_bg: "black@0.5", input: "pb.mp4", output: "wb.mp4" })
+
+// 4. نص متحرك + SFX
+await video_montage({ action: "animated_text", animation: "slide-in-left", text: "WAIT FOR IT...", size: 60, color: "yellow", input: "wb.mp4", output: "txt.mp4" })
+await video_montage({ action: "add_sfx", category: "meme", sfx: "Vine Boom.mp3", at: 3, input: "txt.mp4", output: "sfx.mp4" })
+await video_montage({ action: "add_sfx", category: "meme", sfx: "Bruh.mp3", at: 5, input: "sfx.mp4", output: "sfx2.mp4" })
+
+// 5. Thumbnail للريلز
+await video_montage({ action: "thumbnail", at: 2, input: "sfx2.mp4", output: "reel_thumb.jpg" })
+
+// 6. Normalize لـ -14 LUFS
+await video_montage({ action: "normalize_audio", target_lufs: -14, input: "sfx2.mp4", output: "final_reel.mp4" })
+```
+
+#### Workflow D: Cinematic Travel/Drone
+```typescript
+// 1. Lens Correction + Denoise
+await video_montage({ action: "lens_correction", k1: -0.05, k2: 0.01, input: "drone_raw.mp4", output: "corr.mp4" })
+await video_montage({ action: "denoise", denoise_strength: 0.4, input: "corr.mp4", output: "dn.mp4" })
+
+// 2. Color Grade سينمائي
+await video_montage({ action: "color_grade", color_preset: "cinematic", input: "dn.mp4", output: "grade.mp4" })
+
+// 3. Speed Ramp للكشف عن المناظر
+await video_montage({ action: "speed_ramp", speed_points: "0:1,3:0.25,8:1,10:0.3,15:1", input: "grade.mp4", output: "ramp.mp4" })
+
+// 4. Motion Blur + Letterbox
+await video_montage({ action: "motion_blur", input: "ramp.mp4", output: "mb.mp4" })
+await video_montage({ action: "letterbox", aspect: "2.35:1", input: "mb.mp4", output: "lb.mp4" })
+
+// 5. موسيقى سينمائية + Audio Duck
+await video_montage({ action: "add_music", music: "epic_cinematic.mp3", volume: 0.4, input: "lb.mp4", output: "mus.mp4" })
+await video_montage({ action: "audio_duck", duck_amount: 0.2, duck_attack: 0.2, duck_release: 0.8, music: "epic_cinematic.mp3", input: "mus.mp4", output: "ducked.mp4" })
+
+// 6. Film Border لللمسة النهائية
+await video_montage({ action: "film_border", style: "16mm", input: "ducked.mp4", output: "final_travel.mp4" })
+
+// 7. Thumbnail Grid للمواقع
+await video_montage({ action: "thumbnail_grid", input: "final_travel.mp4", output: "locations_grid.jpg" })
+```
+
+### P.12 جداول مرجعية سريعة (Quick Reference Tables)
+
+#### جميع المؤثرات البصرية بالبلوقن
+| الفئة | المؤثرات | الاستخدام الرئيسي |
+|-------|----------|------------------|
+| **Glitch/Digital** | `glitch`, `rgb_shift`, `chromatic_aberration`, `prism` | سيبربانك، تقني، غلتيش |
+| **Film/Retro** | `film_grain`, `vhs_effect`, `scanlines`, `halftone`, `posterize`, `film_border`, `letterbox` | نوستالجيا، فينتاج، سينمائي |
+| **Blur/Motion** | `zoom_blur`, `directional_blur`, `radial_blur`, `motion_blur`, `crash_zoom` | أكشن، سرعة، تركيز |
+| **Color/Grade** | `color_isolation`, `solarize`, `vignette_advanced`, `filter`, `color_grade` | مزاج، فنّي، سينمائي |
+| **Artistic** | `emboss`, `edge_detect`, `kaleidoscope`, `glow` | تجريبي، إبداعي |
+| **Utility** | `blur_face`, `pixelate_face`, `shake`, `lens_flare`, `particle_overlay`, `light_leaks`, `film_burn` | خصوصية، انتقالات، طبقات |
+
+#### معاملات كل مؤثر (Parameters Quick Ref)
+| المؤثر | المعاملات الأساسية | القيم الافتراضية |
+|--------|-------------------|-----------------|
+| `zoom_blur` | `zoom`, `frames`, `center_x`, `center_y` | 2, 5, 0.5, 0.5 |
+| `directional_blur` | `angle`, `distance` | 45°, 20px |
+| `radial_blur` | `strength` | 0.1 |
+| `glow` | `threshold`, `radius` | 0.7, 20 |
+| `color_isolation` | `color`, `tolerance` | red, 0.1 |
+| `halftone` | `size` | 4 |
+| `posterize` | `levels` | 4 |
+| `solarize` | `threshold` | 128 |
+| `vignette_advanced` | `shape`, `intensity`, `radius` | ellipse, 0.5, 0.8 |
+| `letterbox` | `aspect` | 2.35:1 |
+| `film_border` | `style` | 35mm |
+| `kaleidoscope` | `segments` | 8 |
+| `prism` | `offset` | 5 |
+| `glitch` | `intensity` | 0.3 |
+| `shake` | `intensity` | 10 |
+
+### P.13 نصائح احترافية لدمج المؤثرات (Pro Tips)
+
+```
+🎯 قاعدة التركيب (Layering Order):
+1. تصحيح الكاميرا (lens_correction, denoise)
+2. الزوم/القص (zoom, crop_rotate)
+3. الفلاتر اللونية (filter, color_grade)
+4. المؤثرات الإبداعية (glitch, blur, isolation...)
+5. الحدود/الإطارات (letterbox, film_border, vignette)
+6. النصوص/التراكبات (add_text, animated_text)
+7. الصوت (add_music, add_sfx, normalize_audio)
+
+⚡ نصائح الأداء:
+- طبق المؤثرات الثقيلة (glitch, kaleidoscope) على مقاطع قصيرة فقط
+- استخدم `-crf 18 -preset slow` للجودة النهائية
+- حول لـ CFR قبل المؤثرات المعتمدة على الوقت: `fps=60,setpts=N/60/TB`
+- اختبر على مقطع 5 ثواني قبل التطبيق الكامل
+
+🔊 دمج بصري+صوتي:
+- كل Zoom Punch = Impact SFX
+- كل Speed Ramp = Whoosh/Swoosh
+- كل Color Grade change = موسيقى تتصاعد
+- كل Transition = انتقال صوتي مطابق
+- Normalize Audio أخير خطوة دائماً
+```
+
 ---
- 
+
 ## خلاصة فلسفة المونتاج
 > **المونتاج ليس تنفيذ أوامر، بل رواية قصة بإيقاعٍ متعمد.**
 > كل قص، كل موسيقى، كل أفكت، كل نص، كل زوم، كل تسريع — قرار فني يخدم المزاج والهدف.

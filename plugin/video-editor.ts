@@ -87,7 +87,7 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
     tool: {
       video_montage: tool({
         description:
-          "أداة مونتاج وإنتاج فيديو احترافية مبنية على FFmpeg. تدعم: فحص الملفات، القص، الدمج، إضافة نصوص/عناوين (عبر libass)، النصوص المتحركة، مؤثرات صوتية من مكتبة المستخدم، موسيقى، جرين سكرين، تحكم بالسرعة، علامة مائية، تثبيت، مصغرات، تحويل صيغ، قص/تدوير، فلاتر، خلط صوتي، حرق ترجمة، Picture-in-Picture، والمؤثرات البصرية المتقدمة: glitch، rgb_shift، film_grain، light_leaks، film_burn، scanlines، chromatic_aberration، pixelate_face، vhs_effect، crash_zoom، shake، lens_flare، particle_overlay. ملاحظة: استخدم نسب المسارات مع فلتر النصوص لتفادي مشكلة fontconfig، والأدوات تنفذ أوامر ffmpeg فعلية.",
+          "أداة مونتاج وإنتاج فيديو احترافية مبنية على FFmpeg. تدعم: فحص الملفات، القص، الدمج، إضافة نصوص/عناوين (عبر libass)، النصوص المتحركة، مؤثرات صوتية من مكتبة المستخدم، موسيقى، جرين سكرين، تحكم بالسرعة، علامة مائية، تثبيت، مصغرات، تحويل صيغ، قص/تدوير، فلاتر، خلط صوتي، حرق ترجمة، Picture-in-Picture، والمؤثرات البصرية المتقدمة: glitch، rgb_shift، film_grain، light_leaks، film_burn، scanlines، chromatic_aberration، pixelate_face، vhs_effect، crash_zoom، shake، lens_flare، particle_overlay، zoom_blur، directional_blur، radial_blur، glow، color_isolation، halftone، posterize، solarize، emboss، edge_detect، kaleidoscope، prism، vignette_advanced، letterbox، film_border. ملاحظة: استخدم نسب المسارات مع فلتر النصوص لتفادي مشكلة fontconfig، والأدوات تنفذ أوامر ffmpeg فعلية.",
         args: {
           action: tool
             .schema.enum([
@@ -145,6 +145,21 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
               "shake",
               "lens_flare",
               "particle_overlay",
+              "zoom_blur",
+              "directional_blur",
+              "radial_blur",
+              "glow",
+              "color_isolation",
+              "halftone",
+              "posterize",
+              "solarize",
+              "emboss",
+              "edge_detect",
+              "kaleidoscope",
+              "prism",
+              "vignette_advanced",
+              "letterbox",
+              "film_border",
             ])
             .describe("العملية التي تريد تنفيذها"),
           input: tool.schema.string().optional().describe("مسار ملف الإدخال"),
@@ -226,6 +241,21 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
           strength: tool.schema.number().optional().describe("قوة حبيبات الفيلم، الافتراضي 10"),
           block_size: tool.schema.number().optional().describe("حجم كتلة البكسلنة، الافتراضي 20"),
           overlay: tool.schema.string().optional().describe("مسار فيديو التراكب (light_leaks, film_burn, lens_flare, particle_overlay)"),
+          // Advanced Visual Effects
+          frames: tool.schema.number().optional().describe("عدد الإطارات للـ tmix (zoom_blur)، الافتراضي 5"),
+          angle: tool.schema.number().optional().describe("زاوية البلور الاتجاهي (directional_blur)، الافتراضي 45"),
+          distance: tool.schema.number().optional().describe("مسافة البلور (directional_blur)، الافتراضي 20"),
+          threshold: tool.schema.number().optional().describe("عتبة التوهج/السولاراز/عزل اللون، الافتراضي 0.7/128"),
+          radius: tool.schema.number().optional().describe("نصف قطر التوهج (glow)، الافتراضي 20"),
+          color: tool.schema.string().optional().describe("اللون للعزل (red, green, blue, yellow, cyan, magenta)"),
+          tolerance: tool.schema.number().optional().describe("تسامح عزل اللون، الافتراضي 0.1"),
+          size: tool.schema.number().optional().describe("حجم نمط النصف tono (halftone)، الافتراضي 4"),
+          levels: tool.schema.number().optional().describe("مستويات البوستراز (posterize)، الافتراضي 4"),
+          segments: tool.schema.number().optional().describe("قطاعات الكالييدوسكوب، الافتراضي 8"),
+          offset: tool.schema.number().optional().describe("إزاحة البريزم، الافتراضي 5"),
+          shape: tool.schema.string().optional().describe("شكل الفينيت (ellipse, rect)، الافتراضي ellipse"),
+          aspect: tool.schema.string().optional().describe("نسبة الليتربوكس (2.35:1, 16:9, 4:3)"),
+          style: tool.schema.string().optional().describe("نمط حدود الفيلم (35mm, 16mm)"),
         },
         async execute(args, context) {
           const a = args
@@ -660,6 +690,136 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
                 // جسيمات فوق الفيديو (ثلج، غبار، شرر)
                 const overlay = a.overlay ?? `${BASE}/Content creation/Backgrounds/Video Loops/particles.mp4`
                 cmd = `${ff()} -i ${QUOT(inP)} -i ${QUOT(overlay)} -filter_complex "[1:v]scale=1920:1080,format=rgba,colorchannelmixer=aa=0.4[ol];[0:v][ol]overlay=0:0:format=auto,blend=all_mode='add'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "zoom_blur": {
+                // زوم مع موشن بلور (Zoom Blur)
+                const zoom = a.zoom ?? 2
+                const frames = a.frames ?? 5
+                const probe = await $`ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 ${inP}`.quiet()
+                const dims = (probe.stdout?.toString?.() ?? "0,0").trim().split(",").map((s) => parseInt(s.trim(), 10))
+                const srcW = dims[0] || 1366
+                const srcH = dims[1] || 768
+                const outW = a.width && a.width > 0 ? a.width : srcW
+                const outH = a.height && a.height > 0 ? a.height : srcH
+                const zw = Math.floor((outW * zoom) / 2) * 2
+                const zh = Math.floor((outH * zoom) / 2) * 2
+                const cx = a.center_x ?? 0.5
+                const cy = a.center_y ?? 0.5
+                const offx = Math.round(cx * (zw - outW))
+                const offy = Math.round(cy * (zh - outH))
+                const weights = Array.from({length: frames}, (_, i) => 1).join(" ")
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "scale=${zw}:${zh},crop=${outW}:${outH}:${offx}:${offy},tmix=frames=${frames}:weights=${weights}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "directional_blur": {
+                // موشن بلور اتجاهي (Directional Blur)
+                const angle = a.angle ?? 45
+                const distance = a.distance ?? 20
+                const rad = angle * Math.PI / 180
+                const dx = Math.round(distance * Math.cos(rad))
+                const dy = Math.round(distance * Math.sin(rad))
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "convolution='0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0:0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0:0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0:0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0:0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0:0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0:0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0:0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0:0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "radial_blur": {
+                // زوم بلور مركزي (Radial/Zoom Blur)
+                const strength = a.strength ?? 0.1
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "geq=lum='lum(X+W*${strength}*(0.5-X/W), Y+H*${strength}*(0.5-Y/H))'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "glow": {
+                // توهج (Glow Effect)
+                const threshold = a.threshold ?? 0.7
+                const radius = a.radius ?? 20
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "geq=lum='if(gt(lum(X,Y),${threshold}*255),lum(X,Y)+${radius},lum(X,Y))',boxblur=${radius}:${radius}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "color_isolation": {
+                // عزل لون محدد (Sin City Style)
+                const color = a.color ?? "red"
+                const tolerance = a.tolerance ?? 0.1
+                const colorMap: Record<string, string> = {
+                  red: "r='if(gt(r,128),r,0)':g=0:b=0",
+                  green: "r=0:g='if(gt(g,128),g,0)':b=0",
+                  blue: "r=0:g=0:b='if(gt(b,128),b,0)'",
+                  yellow: "r='if(gt(r,128),r,0)':g='if(gt(g,128),g,0)':b=0",
+                  cyan: "r=0:g='if(gt(g,128),g,0)':b='if(gt(b,128),b,0)'",
+                  magenta: "r='if(gt(r,128),r,0)':g=0:b='if(gt(b,128),b,0)'",
+                }
+                const channels = colorMap[color.toLowerCase()] ?? colorMap.red
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "geq=${channels}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "halftone": {
+                // تأثير نصف tono (Comic/Halftone)
+                const size = a.size ?? 4
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "geq=lum='128+127*sin(2*PI*X/${size})*sin(2*PI*Y/${size})'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "posterize": {
+                // بوسترايز (Posterize - تقليل الألوان)
+                const levels = a.levels ?? 4
+                const step = Math.floor(256 / levels)
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "geq=r='${step}*(r/${step})':g='${step}*(g/${step})':b='${step}*(b/${step})'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "solarize": {
+                // سولاراز (Solarize - عكس الألوان فوق عتبة)
+                const threshold = a.threshold ?? 128
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "geq=r='if(gt(r,${threshold}),255-r,r)':g='if(gt(g,${threshold}),255-g,g)':b='if(gt(b,${threshold}),255-b,b)'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "emboss": {
+                // إمبوس (Emboss - تأثير بارز)
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "convolution='-2 -1 0 -1 1 1 0 1 2'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "edge_detect": {
+                // كشف الحواف (Edge Detection)
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "convolution='-1 -1 -1 -1 8 -1 -1 -1 -1'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "kaleidoscope": {
+                // كالييدوسكوب (Kaleidoscope - مرايا)
+                const segments = a.segments ?? 8
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "split=${segments}[${Array.from({length: segments}, (_, i) => `v${i}`).join("][" )}];${Array.from({length: segments}, (_, i) => `[v${i}]rotate=${i * 360/segments * Math.PI/180}[r${i}]`).join(";")};${Array.from({length: segments}, (_, i) => `[r${i}]`).join("")}hstack=inputs=${segments}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "prism": {
+                // بريزم (Prism - انقسام الضوء)
+                const offset = a.offset ?? 5
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "split=3[r][g][b];[r]geq=r='r(X+${offset},Y)':g=0:b=0[rr];[g]geq=r=0:g='g(X,Y)':b=0[gg];[b]geq=r=0:g=0:b='b(X-${offset},Y)'[bb];[rr][gg][bb]overlay=0:0,overlay=0:0" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "vignette_advanced": {
+                // فينيت متقدم (Advanced Vignette)
+                const shape = a.shape ?? "ellipse"
+                const intensity = a.intensity ?? 0.5
+                const radius = a.radius ?? 0.8
+                if (shape === "ellipse") {
+                  cmd = `${ff()} -i ${QUOT(inP)} -vf "geq=lum='lum(X,Y)*(1-${intensity}*pow(sqrt(pow((X/W-0.5)/${radius},2)+pow((Y/H-0.5)/${radius},2)),2))'" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                } else {
+                  cmd = `${ff()} -i ${QUOT(inP)} -vf "vignette=PI/4:angle=${intensity}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                }
+                break
+              }
+              case "letterbox": {
+                // ليتربوكس سينمائي (Cinematic Letterbox)
+                const aspect = a.aspect ?? "2.35:1"
+                const [w, h] = aspect.split(":").map(Number)
+                const targetRatio = w / h
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=black" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "film_border": {
+                // حدود فيلم (Film Border/Perforations)
+                const style = a.style ?? "35mm"
+                if (style === "35mm") {
+                  cmd = `${ff()} -i ${QUOT(inP)} -vf "drawbox=y=0:w=iw:h=40:color=black:t=fill,drawbox=y=ih-40:w=iw:h=40:color=black:t=fill,drawbox=x=0:w=20:h=ih:color=black:t=fill,drawbox=x=iw-20:w=20:h=ih:color=black:t=fill" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                } else {
+                  cmd = `${ff()} -i ${QUOT(inP)} -vf "drawbox=y=0:w=iw:h=30:color=black:t=fill,drawbox=y=ih-30:w=iw:h=30:color=black:t=fill" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                }
                 break
               }
               default:
