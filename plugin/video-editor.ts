@@ -292,21 +292,22 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
                 break
               }
               case "zoom": {
-                // زوم in / out / punch عبر zoompan (d=1 يحافظ على مدة الفيديو)
-                const zMax = a.zoom ?? 1.5
-                const zStart = 1.0
-                const dur = a.zoom_duration ?? 2
-                const fps = 30
-                const step = Math.max((zMax - zStart) / (dur * fps), 0.001)
-                const cx = (a.center_x ?? 0.5) * 2
-                const cy = (a.center_y ?? 0.5) * 2
-                const zType = a.zoom_type ?? "in"
-                let zExpr = `min(zoom+${step},${zMax})`
-                if (zType === "out") zExpr = `if(lte(zoom,1),${zMax},max(1.001,zoom-${step}))`
-                if (zType === "punch") zExpr = `min(zoom+${step * 6},${zMax})`
-                const xExpr = `'iw/${cx}-(iw/zoom/2)'`
-                const yExpr = `'ih/${cy}-(ih/zoom/2)'`
-                cmd = `${ff()} -i ${QUOT(inP)} -vf "zoompan=z='${zExpr}':x=${xExpr}:y=${yExpr}:d=1:s=${a.width ?? 1920}x${a.height ?? 1080}:fps=${fps}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                // زوم ثابت سريع عبر scale+crop (يحافظ على المدة والمعدل تماماً)
+                // نقرأ أبعاد الفيديو الفعلية بـ ffprobe لنحسب أرقاماً ثابتة صحيحة (نتجنب مشكلة iw داخل crop)
+                const z = a.zoom ?? 1.5
+                const cx = a.center_x ?? 0.5
+                const cy = a.center_y ?? 0.5
+                const probe = await $`ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 ${inP}`.quiet()
+                const dims = (probe.stdout?.toString?.() ?? "0,0").trim().split(",").map((s) => parseInt(s.trim(), 10))
+                const srcW = dims[0] || 1366
+                const srcH = dims[1] || 768
+                const outW = a.width && a.width > 0 ? a.width : srcW
+                const outH = a.height && a.height > 0 ? a.height : srcH
+                const zw = Math.floor((outW * z) / 2) * 2
+                const zh = Math.floor((outH * z) / 2) * 2
+                const offx = Math.round(cx * (zw - outW))
+                const offy = Math.round(cy * (zh - outH))
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "scale=${zw}:${zh},crop=${outW}:${outH}:${offx}:${offy}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
                 break
               }
               case "legendary_transition": {
@@ -326,8 +327,11 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
                   wipe: "wiperight",
                 }
                 const xf = xfadeMap[tt] ?? "fade"
-                // offset تقريبي حسب مدة القطعة الأولى (قيم بسيطة)
-                cmd = `${ff()} -i ${QUOT(inP)} -i ${QUOT(in2)} -filter_complex "[0:v][1:v]xfade=transition=${xf}:duration=${td}:offset=2[v];[0:a][1:a]acrossfade=d=${td}[a]" -map "[v]" -map "[a]" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a aac ${QUOT(out)}`
+                // حساب offset صحيح = مدة القطعة الأولى - مدة الإنتقالة (يقرأ المدة عبر ffprobe)
+                const durProbe = await $`ffprobe -v error -show_entries format=duration -of csv=p=0 ${inP}`.quiet()
+                const firstDur = parseFloat((durProbe.stdout?.toString?.() ?? "0").trim()) || 2
+                const off = Math.max(firstDur - td, 0.1)
+                cmd = `${ff()} -i ${QUOT(inP)} -i ${QUOT(in2)} -filter_complex "[0:v][1:v]xfade=transition=${xf}:duration=${td}:offset=${off}[v];[0:a][1:a]acrossfade=d=${td}[a]" -map "[v]" -map "[a]" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a aac ${QUOT(out)}`
                 break
               }
               default:
