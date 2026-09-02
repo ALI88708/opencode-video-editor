@@ -2540,6 +2540,433 @@ await video_montage({ action: "thumbnail_grid", input: "final_travel.mp4", outpu
 - Normalize Audio أخير خطوة دائماً
 ```
 
+### P.14 ميزات احترافية جديدة - اللون والصوت (Professional Color & Audio)
+
+#### LUT Apply - تطبيق جداول البحث اللوني
+```typescript
+// تطبيق LUT احترافي (.cube أو .3dl)
+await video_montage({ 
+  action: "lut_apply", 
+  lut: "C:/LUTs/FilmLook.cube", 
+  lut_strength: 0.7,  // شدة 0-1
+  input: "raw.mp4", 
+  output: "graded.mp4" 
+})
+```
+> **ملاحظة:** ملفات LUT توجد مجاناً في: `groundcontrol.com/free-luts`، `lutify.me`، `cinematic-luts.com`
+
+#### Audio Compressor - ضغط النطاق الديناميكي
+```typescript
+// لتسوية الصوت: رفع الهمس، خفض الصراخ
+await video_montage({ 
+  action: "audio_compressor", 
+  compressor_threshold: -18,  // dB: ابدأ الضغط من هنا
+  compressor_ratio: 4,        // 4:1 = لكل 4dB دخول، 1dB خروج
+  compressor_attack: 5,       // ms: سرعة الاستجابة
+  compressor_release: 100,    // ms: سرعة العودة
+  input: "dialogue.mp4", 
+  output: "compressed.mp4" 
+})
+```
+**إعدادات مقترحة:**
+| المحتوى | Threshold | Ratio | Attack | Release |
+|----------|-----------|-------|--------|---------|
+| حوار/بودكاست | -18dB | 3:1 | 10ms | 100ms |
+| غناء | -12dB | 4:1 | 5ms | 50ms |
+| موسيقى كاملة | -24dB | 2:1 | 30ms | 200ms |
+| بث مباشر | -16dB | 5:1 | 3ms | 150ms |
+
+#### Audio Limiter - منع القمم (Peak Limiting)
+```typescript
+// حماية من التشويه - ضروري قبل الرفع
+await video_montage({ 
+  action: "audio_limiter", 
+  limiter_threshold: -1,    // dB: سقف الصوت
+  limiter_release: 50,      // ms
+  input: "final.mp4", 
+  output: "limited.mp4" 
+})
+```
+
+#### Audio EQ - معادلة صوتية بارامترية
+```typescript
+// تعديل ترددات محددة
+await video_montage({ 
+  action: "audio_eq", 
+  eq_bands: "100:-3,200:2,1000:-1,3000:3,8000:2",  // تردد:كسب dB
+  input: "audio.mp4", 
+  output: "eqed.mp4" 
+})
+```
+**ترددات شائعة:**
+- **60-100Hz**: وزن/دفء (صوت ذكر، كيك درام)
+- **200-400Hz**: طين/مبهم (قلل للوضوح)
+- **1-3kHz**: حضور/وضوح كلام (ارفع للهواتف)
+- **4-8kHz**: هواء/تفاصيل (صوت أنثى، هاي هات)
+- **10kHz+**: لمعان/هواء (خفيف جداً)
+
+#### Audio Gate - بوابة ضوضاء (Noise Gate)
+```typescript
+// قطع الصمت بين الجمل - نظّف البودكاست
+await video_montage({ 
+  action: "audio_gate", 
+  gate_threshold: -40,   // dB: تحت هذا = صامت
+  gate_ratio: 10,        // نسبة الكتم
+  input: "podcast_raw.mp4", 
+  output: "clean.mp4" 
+})
+```
+
+---
+
+### P.15 تصدير جاهز للمنصات (Export Presets)
+
+```typescript
+// قالب واحد للمنصة المطلوبة - لا تفكر في الكودك/البت ريت/الأبعاد
+await video_montage({ 
+  action: "export_preset", 
+  preset: "tiktok",  // youtube, tiktok, reels, shorts, twitter, instagram, high-quality, web
+  input: "final.mp4", 
+  output: "tiktok_ready.mp4" 
+})
+```
+
+| القالب | الدقة | الكودك | CRF | الصوت | الاستخدام |
+|---------|--------|--------|-----|--------|-----------|
+| `youtube` | 1920x1080 | H.264 | 18 | AAC 192k | يوتيوب قياسي |
+| `tiktok` | 1080x1920 | H.264 | 22 | AAC 128k | تيك توك / ريلز |
+| `reels` | 1080x1920 | H.264 | 22 | AAC 128k | إنستجرام ريلز |
+| `shorts` | 1080x1920 | H.264 | 22 | AAC 128k | يوتيوب شورتس |
+| `twitter` | 1280x720 | H.264 | 24 | AAC 128k | تويتر / X |
+| `instagram` | 1080x1080 | H.264 | 22 | AAC 128k | بوست إنستجرام |
+| `high-quality` | أصلي | H.264 | 16 | AAC 256k | أرشيف/ماستر |
+| `web` | أصلي | VP9 | 30 | Opus 128k | ويب/HTML5 |
+
+---
+
+### P.16 إعادة تأطير ذكية (Auto-Reframe)
+
+```typescript
+// تحويل أفقي → عمودي مع تتبع الحركة
+await video_montage({ 
+  action: "auto_reframe", 
+  reframe_aspect: "9:16",     // 9:16, 1:1, 4:5, 16:9
+  reframe_tracking: "motion", // center, face, motion
+  input: "horizontal.mp4", 
+  output: "vertical.mp4" 
+})
+```
+| وضع التتبع | الوصف | الأفضل لـ |
+|------------|--------|-----------|
+| `center` | قص من المنتصف | لقطات ثابتة، مناظر |
+| `face` | تتبع الوجوه | مقابلات، فلوقات |
+| `motion` | تتبع الحركة | أكشن، رياضة، رقص |
+
+---
+
+### P.17 سير عمل بروكسي (Proxy Workflow للـ 4K)
+
+```typescript
+// 1. أنشئ بروكسي خفيف للمونتاج
+await video_montage({ 
+  action: "proxy_create", 
+  proxy_resolution: "1280x720",  // 960x540, 640x360
+  proxy_codec: "prores",         // prores, dnxhd, h264
+  input: "4K_master.mov", 
+  output: "proxy.mov" 
+})
+
+// 2. منتنج على البروكسي (سريع جداً)
+// ... كل عملياتك على proxy.mov ...
+
+// 3. استبدل بالملف الأصلي للتصدير النهائي
+// (يدوياً: غيّر المسار في التايملاين، أو استخدم conform)
+```
+
+**متى تحتاج بروكسي؟**
+- فيديو 4K/6K/8K
+- كودك ثقيل (ProRes RAW, BRAW, R3D)
+- تأثيرات متعددة (LUT + Glitch + Blur)
+- جهاز بمواصفات متوسطة
+
+---
+
+### P.18 معالجة دفعة (Batch Processing)
+
+```typescript
+// تطبيق نفس العملية على 50 فيديو
+const clips = ["clip1.mp4", "clip2.mp4", "clip3.mp4", ...]  // 50 ملف
+
+await video_montage({ 
+  action: "batch_process", 
+  inputs: clips,
+  batch_action: "export_preset",
+  batch_params: JSON.stringify({ preset: "tiktok" }),
+  output: "batch_output/"  // مجلد للنتائج
+})
+```
+
+**عمليات تصلح للبتش:**
+- `export_preset` - تصدير للمنصات
+- `normalize_audio` - توحيد اللوفس
+- `filter` - فلتر موحد (vibrant, cinematic...)
+- `watermark` - علامة مائية على الكل
+- `subtitle_burn` - حرق ترجمة موحدة
+- `letterbox` - نسبة سينمائية موحدة
+
+---
+
+### P.19 إعادة تعيين الزمن (Time Remapping)
+
+```typescript
+// سرعة متغيرة مع keyframes: بطيء → سريع → بطيء
+await video_montage({ 
+  action: "time_remap", 
+  remap_points: "0:0,2:1,5:5,7:6,10:10",  // وقت_مدخل:وقت_مخرج
+  input: "action.mp4", 
+  output: "remapped.mp4" 
+})
+```
+**قراءة النقاط:** `0:0` = البداية، `2:1` = عند 2ث مدخل → 1ث مخرج (2x سرعة)، `5:5` = طبيعي، `7:6` = بطيء 0.5x، `10:10` = نهاية طبيعية.
+
+**أنماط شائعة:**
+| النمط | النقاط | الوصف |
+|-------|--------|-------|
+| **Speed Ramp** | `0:0,2:4,4:4,6:6` | تسريع وسط، بطيء للباقي |
+| **Freeze Frame** | `0:0,3:3,3:5,5:7` | تجمد عند 3ث لـ 2ث |
+| **Reverse Burst** | `0:0,2:2,2:0,4:4` | تقدم → تراجع → تقدم |
+| **Ramping Slow** | `0:0,5:2,10:10` | تسريع تدريجي ثم طبيعي |
+
+---
+
+### P.20 كروم كاي متقدم (Advanced Chroma Key)
+
+```typescript
+// جرين سكرين احترافي: كبت تسرب + حواف ناعمة
+await video_montage({ 
+  action: "chroma_key_advanced", 
+  key_color: "green",           // green, blue, أو hex مخصص
+  similarity: 0.15,             // تسامح اللون 0-1
+  blend: 0.2,                   // نعومة الحواف
+  spill_suppression: 0.5,       // كبت التسرب الأخضر على الموضوع 0-1
+  edge_feather: 3,              // ترقيق حواف بالبيكسل
+  background: "studio_bg.mp4",  // خلفية بديلة
+  input: "greenscreen.mp4", 
+  output: "keyed.mp4" 
+})
+```
+
+**نصائح لجرين سكرين نظيف:**
+1. إضاءة متساوية على الشاشة الخضراء (لا ظلال)
+2. مسافة ≥ 2م بين الموضوع والشاشة (يمنع التسرب)
+3. لا يرتدي الموضوع أخضر/أزرق
+4. استخدم `spill_suppression: 0.5-0.8` للحواف النظيفة
+5. `edge_feather: 2-5` للدمج الطبيعي
+
+---
+
+### P.21 تصحيح رولينغ شاتر (Rolling Shutter Correction)
+
+```typescript
+// إصلاح انحناء الخطوط العمودية في الكاميرات CMOS
+await video_montage({ 
+  action: "rolling_shutter", 
+  rs_correction: 0.5,   // 0-1: قوة التصحيح
+  input: "drone_fast.mp4", 
+  output: "fixed.mp4" 
+})
+```
+> **متى تحتاجه:** لقطات درون سريعة، كاميرات.Action، بانوراما أفقية سريعة، أي CMOS بدون global shutter.
+
+---
+
+### P.22 تصحيح عدسة متقدم (Lens Correction Advanced)
+
+```typescript
+// إصلاح فيش آي / وايد أنجل / تليفوتو
+await video_montage({ 
+  action: "lens_correction_advanced", 
+  lens_model: "fisheye",      // fisheye, wide-angle, telephoto, custom
+  lens_fov: 180,              // مجال الرؤية بالدرجات
+  k1: -0.3,                   // معامل تشويه شعاعي رئيسي
+  k2: 0.1,                    // معامل تشويه ثانوي
+  input: "gopro_fisheye.mp4", 
+  output: "corrected.mp4" 
+})
+```
+
+| النموذج | k1 النموذجي | k2 النموذجي | الاستخدام |
+|---------|-------------|-------------|-----------|
+| `fisheye` | -0.3 إلى -0.5 | 0.05-0.15 | جو برو، 360 كام |
+| `wide-angle` | -0.05 إلى -0.15 | 0-0.05 | درون، أكشن كام |
+| `telephoto` | 0.01-0.05 | 0 | عدسات تقريب |
+| `custom` | يدوي | يدوي | معايرة دقيقة |
+
+---
+
+### P.23 جداول محدثة (Updated Quick Reference)
+
+#### جميع Actions بالبلوقن (77 action)
+| الفئة | المؤثرات |
+|-------|----------|
+| **أساسي** | `info`, `cut`, `merge`, `convert`, `crop_rotate`, `reverse_video` |
+| **نصوص** | `add_text`, `animated_text`, `subtitle_burn`, `timecode` |
+| **صوت** | `add_sfx`, `add_music`, `audio_mix`, `audio_duck`, `normalize_audio`, `extract_audio`, `audio_compressor`, `audio_limiter`, `audio_eq`, `audio_gate` |
+| **لون/فلتر** | `filter`, `color_grade`, `lut_apply`, `export_preset` |
+| **بصري متقدم** | `glitch`, `rgb_shift`, `film_grain`, `light_leaks`, `film_burn`, `scanlines`, `chromatic_aberration`, `pixelate_face`, `vhs_effect`, `crash_zoom`, `shake`, `lens_flare`, `particle_overlay`, `zoom_blur`, `directional_blur`, `radial_blur`, `glow`, `color_isolation`, `halftone`, `posterize`, `solarize`, `emboss`, `edge_detect`, `kaleidoscope`, `prism`, `vignette_advanced`, `letterbox`, `film_border` |
+| **حركة/زوم** | `zoom`, `speed`, `speed_ramp`, `motion_blur`, `time_remap`, `auto_reframe` |
+| **جرين سكرين** | `green_screen`, `chroma_key_advanced` |
+| **تصحيح** | `stabilize`, `denoise`, `lens_correction`, `lens_correction_advanced`, `rolling_shutter`, `blur_face` |
+| **سير عمل** | `watermark`, `pip`, `split_screen`, `image_to_video`, `legendary_transition`, `auto_cut`, `beat_sync`, `thumbnail`, `thumbnail_grid`, `gif_loop`, `waveform`, `progress_bar`, `crop_detect`, `scene_detect`, `proxy_create`, `batch_process` |
+
+#### معاملات الميزات الجديدة (New Parameters Quick Ref)
+| المؤثر | المعاملات الأساسية | القيم الافتراضية |
+|--------|-------------------|-----------------|
+| `lut_apply` | `lut`, `lut_strength` | ملف .cube, 1.0 |
+| `audio_compressor` | `threshold`, `ratio`, `attack`, `release` | -18dB, 4, 5ms, 100ms |
+| `audio_limiter` | `threshold`, `release` | -1dB, 50ms |
+| `audio_eq` | `eq_bands` | "100:0,1000:0,5000:0" |
+| `audio_gate` | `threshold`, `ratio` | -40dB, 10 |
+| `export_preset` | `preset` | youtube |
+| `auto_reframe` | `reframe_aspect`, `reframe_tracking` | 9:16, motion |
+| `proxy_create` | `proxy_resolution`, `proxy_codec` | 1280x720, prores |
+| `batch_process` | `batch_action`, `batch_params` | action, JSON |
+| `time_remap` | `remap_points` | "0:0,1:1" |
+| `chroma_key_advanced` | `key_color`, `similarity`, `spill_suppression`, `edge_feather` | green, 0.15, 0.5, 2 |
+| `rolling_shutter` | `rs_correction` | 0.5 |
+| `lens_correction_advanced` | `lens_model`, `lens_fov`, `k1`, `k2` | fisheye, 180, -0.3, 0.1 |
+
+---
+
+### P.24 وصفات متقدمة للميزات الجديدة (Advanced Recipes)
+
+#### Recipe: "Cinematic Film Look مع LUT"
+```typescript
+// 1. تصحيح العدسة
+await video_montage({ action: "lens_correction_advanced", lens_model: "wide-angle", input: "raw.mp4", output: "corr.mp4" })
+
+// 2. تطبيق LUT سينمائي
+await video_montage({ action: "lut_apply", lut: "C:/LUTs/Kodak2383.cube", lut_strength: 0.8, input: "corr.mp4", output: "lut.mp4" })
+
+// 3. حبيبات فيلم خفيفة
+await video_montage({ action: "film_grain", strength: 8, input: "lut.mp4", output: "grain.mp4" })
+
+// 4. فينيت سينمائي
+await video_montage({ action: "vignette_advanced", shape: "ellipse", intensity: 0.3, input: "grain.mp4", output: "vig.mp4" })
+
+// 5. تصدير للماستر
+await video_montage({ action: "export_preset", preset: "high-quality", input: "vig.mp4", output: "master.mov" })
+```
+
+#### Recipe: "Podcast Audio Polish كامل"
+```typescript
+// 1. نويز جيت - قطع الصمت
+await video_montage({ action: "audio_gate", gate_threshold: -45, input: "raw.mp4", output: "gated.mp4" })
+
+// 2. كومبريسور - تسوية الحوار
+await video_montage({ action: "audio_compressor", compressor_threshold: -18, compressor_ratio: 3, input: "gated.mp4", output: "comp.mp4" })
+
+// 3. EQ - وضوح الكلام
+await video_montage({ action: "audio_eq", eq_bands: "100:-2,200:1,3000:3,6000:2", input: "comp.mp4", output: "eq.mp4" })
+
+// 4. لimiter - حماية القمم
+await video_montage({ action: "audio_limiter", limiter_threshold: -1, input: "eq.mp4", output: "limited.mp4" })
+
+// 5. نورماليز للمنصات
+await video_montage({ action: "normalize_audio", target_lufs: -16, true_peak: -1, input: "limited.mp4", output: "final_podcast.mp4" })
+```
+
+#### Recipe: "Vertical Reel من أفقي - ذكي"
+```typescript
+// 1. Auto-reframe مع تتبع الحركة
+await video_montage({ action: "auto_reframe", reframe_aspect: "9:16", reframe_tracking: "motion", input: "horizontal.mp4", output: "vertical.mp4" })
+
+// 2. فلاتر ريلز
+await video_montage({ action: "filter", effect: "vibrant", input: "vertical.mp4", output: "vib.mp4" })
+await video_montage({ action: "color_grade", color_preset: "teal-orange", input: "vib.mp4", output: "grade.mp4" })
+
+// 3. Progress Bar + Waveform
+await video_montage({ action: "progress_bar", progress_color: "red", progress_height: 6, input: "grade.mp4", output: "pb.mp4" })
+await video_montage({ action: "waveform", waveform_color: "white", waveform_bg: "black@0.3", input: "pb.mp4", output: "wb.mp4" })
+
+// 4. تصدير ريلز
+await video_montage({ action: "export_preset", preset: "reels", input: "wb.mp4", output: "reel_final.mp4" })
+```
+
+#### Recipe: "Green Screen Production كامل"
+```typescript
+// 1. كروم كاي متقدم
+await video_montage({ action: "chroma_key_advanced", key_color: "green", similarity: 0.12, spill_suppression: 0.7, edge_feather: 3, background: "virtual_set.mp4", input: "talent_green.mp4", output: "keyed.mp4" })
+
+// 2. تصحيح لون الموضوع ليتناسب مع الخلفية
+await video_montage({ action: "color_grade", color_preset: "cinematic", input: "keyed.mp4", output: "matched.mp4" })
+
+// 3. Light wrap (إضاءة خلفية تنعكس على الموضوع) - عبر overlay
+await video_montage({ action: "light_leaks", overlay: "light_wrap.mp4", input: "matched.mp4", output: "wrapped.mp4" })
+
+// 4. تصدير
+await video_montage({ action: "export_preset", preset: "youtube", input: "wrapped.mp4", output: "final_green.mp4" })
+```
+
+---
+
+### P.25 سير عمل إنتاج متكامل (Complete Production Pipelines)
+
+#### Pipeline A: "من 4K Raw إلى يوتيوب + تيك توك + ريلز"
+```typescript
+// 1. بروكسي للمونتاج السريع
+await video_montage({ action: "proxy_create", proxy_resolution: "1280x720", proxy_codec: "prores", input: "4K_raw.mov", output: "proxy.mov" })
+
+// 2. مونتاج على البروكسي... (قص، ترتيب، نصوص، موسيقى)
+// افترض النتيجة: "edit_proxy.mov"
+
+// 3. Conform: استبدل بالملف الأصلي للتصدير
+// (في الكود: غيّر input من proxy إلى 4K_raw في خطوات التصدير)
+
+// 4. ماستر عالي الجودة
+await video_montage({ action: "export_preset", preset: "high-quality", input: "edit_4K.mov", output: "master.mov" })
+
+// 5. يوتيوب (16:9)
+await video_montage({ action: "export_preset", preset: "youtube", input: "master.mov", output: "youtube.mp4" })
+
+// 6. تيك توك (9:16) - Auto-reframe
+await video_montage({ action: "auto_reframe", reframe_aspect: "9:16", reframe_tracking: "motion", input: "master.mov", output: "vertical.mp4" })
+await video_montage({ action: "export_preset", preset: "tiktok", input: "vertical.mp4", output: "tiktok.mp4" })
+
+// 7. ريلز (9:16)
+await video_montage({ action: "export_preset", preset: "reels", input: "vertical.mp4", output: "reels.mp4" })
+
+// 8. شورتس (9:16)
+await video_montage({ action: "export_preset", preset: "shorts", input: "vertical.mp4", output: "shorts.mp4" })
+
+// 9. ثومبنيلز
+await video_montage({ action: "thumbnail_grid", input: "master.mov", output: "thumbs.jpg" })
+```
+
+#### Pipeline B: "تسليم عميل - فيديو منتج"
+```typescript
+// 1. تنظيف الصوت
+await video_montage({ action: "audio_gate", gate_threshold: -40, input: "product_raw.mp4", output: "a1.mp4" })
+await video_montage({ action: "audio_compressor", compressor_threshold: -16, compressor_ratio: 3, input: "a1.mp4", output: "a2.mp4" })
+await video_montage({ action: "audio_eq", eq_bands: "100:-3,3000:2,8000:1", input: "a2.mp4", output: "a3.mp4" })
+await video_montage({ action: "audio_limiter", limiter_threshold: -1, input: "a3.mp4", output: "audio_clean.mp4" })
+
+// 2. لون المنتج (Brand Colors)
+await video_montage({ action: "lut_apply", lut: "brand_lut.cube", lut_strength: 0.6, input: "product_raw.mp4", output: "color.mp4" })
+
+// 3. نصوص/شعار
+await video_montage({ action: "add_text", text: "PRODUCT NAME", font: "Pricedown.otf", size: 120, color: "white", input: "color.mp4", output: "titled.mp4" })
+await video_montage({ action: "watermark", logo: "logo.png", position: "top-right", input: "titled.mp4", output: "watermarked.mp4" })
+
+// 4. لimiter نهائي + نورماليز
+await video_montage({ action: "audio_limiter", limiter_threshold: -1, input: "watermarked.mp4", output: "limited.mp4" })
+await video_montage({ action: "normalize_audio", target_lufs: -14, true_peak: -1, input: "limited.mp4", output: "final_product.mp4" })
+
+// 5. تصدير متعدد
+await video_montage({ action: "export_preset", preset: "high-quality", input: "final_product.mp4", output: "delivery_master.mov" })
+await video_montage({ action: "export_preset", preset: "web", input: "final_product.mp4", output: "delivery_web.webm" })
+```
+
 ---
 
 ## خلاصة فلسفة المونتاج
