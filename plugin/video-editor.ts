@@ -112,6 +112,8 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
               "image_to_video",
               "split_screen",
               "reverse_video",
+              "zoom",
+              "legendary_transition",
             ])
             .describe("العملية التي تريد تنفيذها"),
           input: tool.schema.string().optional().describe("مسار ملف الإدخال"),
@@ -146,6 +148,13 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
             .optional()
             .describe("نوع عملية القص/التدوير (مع action=crop_rotate)"),
           text_align: tool.schema.enum(["center", "top-center", "top-left", "top-right", "bottom-left", "bottom-right"]).optional().describe("محاذاة النص"),
+          zoom_type: tool.schema.enum(["in", "out", "punch"]).optional().describe("نوع الزوم: in = تقريب، out = تبعيد، punch = تقريب سريع"),
+          zoom: tool.schema.number().optional().describe("مقدار الزوم النهائي (مثل 1.5 = تكبير 50%)، الافتراضي 1.5"),
+          zoom_duration: tool.schema.number().optional().describe("مدة الزوم بالثواني، الافتراضي 2"),
+          center_x: tool.schema.number().optional().describe("مركز الزوم الأفقي (0-1)، الافتراضي 0.5"),
+          center_y: tool.schema.number().optional().describe("مركز الزوم العمودي (0-1)، الافتراضي 0.5"),
+          transition_type: tool.schema.enum(["zoomin", "zoomout", "smooth", "whippan", "flash", "fade", "circle", "wipe"]).optional().describe("نوع الإنتقالة الأسطورية بين لقطتين"),
+          transition_duration: tool.schema.number().optional().describe("مدة الإنتقالة بالثواني، الافتراضي 0.5"),
         },
         async execute(args, context) {
           const a = args
@@ -280,6 +289,45 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
               case "reverse_video": {
                 // عكس الفيديو بالكامل
                 cmd = `${ff()} -i ${QUOT(inP)} -vf "reverse" -af "areverse" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a aac ${QUOT(out)}`
+                break
+              }
+              case "zoom": {
+                // زوم in / out / punch عبر zoompan (d=1 يحافظ على مدة الفيديو)
+                const zMax = a.zoom ?? 1.5
+                const zStart = 1.0
+                const dur = a.zoom_duration ?? 2
+                const fps = 30
+                const step = Math.max((zMax - zStart) / (dur * fps), 0.001)
+                const cx = (a.center_x ?? 0.5) * 2
+                const cy = (a.center_y ?? 0.5) * 2
+                const zType = a.zoom_type ?? "in"
+                let zExpr = `min(zoom+${step},${zMax})`
+                if (zType === "out") zExpr = `if(lte(zoom,1),${zMax},max(1.001,zoom-${step}))`
+                if (zType === "punch") zExpr = `min(zoom+${step * 6},${zMax})`
+                const xExpr = `'iw/${cx}-(iw/zoom/2)'`
+                const yExpr = `'ih/${cy}-(ih/zoom/2)'`
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "zoompan=z='${zExpr}':x=${xExpr}:y=${yExpr}:d=1:s=${a.width ?? 1920}x${a.height ?? 1080}:fps=${fps}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              case "legendary_transition": {
+                // إنتقالة أسطورية بين لقطتين عبر xfade
+                const in2 = a.inputs?.[1] ?? ""
+                const tt = a.transition_type ?? "fade"
+                const td = a.transition_duration ?? 0.5
+                // خريطة نوع الانتقالة إلى ما يفهمه xfade
+                const xfadeMap: Record<string, string> = {
+                  zoomin: "zoomin",
+                  zoomout: "zoomout",
+                  smooth: "fade",
+                  whippan: "slideleft",
+                  flash: "fadeblack",
+                  fade: "fade",
+                  circle: "circleopen",
+                  wipe: "wiperight",
+                }
+                const xf = xfadeMap[tt] ?? "fade"
+                // offset تقريبي حسب مدة القطعة الأولى (قيم بسيطة)
+                cmd = `${ff()} -i ${QUOT(inP)} -i ${QUOT(in2)} -filter_complex "[0:v][1:v]xfade=transition=${xf}:duration=${td}:offset=2[v];[0:a][1:a]acrossfade=d=${td}[a]" -map "[v]" -map "[a]" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a aac ${QUOT(out)}`
                 break
               }
               default:

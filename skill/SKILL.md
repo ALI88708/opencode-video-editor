@@ -366,6 +366,97 @@ ffmpeg -i video1.mp4 -i video2.mp4 -filter_complex "[0:v][1:v]xfade=transition=f
 ffmpeg -i v1.mp4 -i v2.mp4 -filter_complex "[0:v][1:v]xfade=transition=fade:duration=1:offset=5[v];[0:a][1:a]acrossfade=d=1[a]" -map "[v]" -map "[a]" output.mp4
 ```
 
+---
+
+## 🔍 تقنيات إبراز: Zoom In / Zoom Out الأسطورية
+
+> الـ Zoom هو **أقوى أداة إبراز** في المونتاج الحديث للألعاب. يوجه عين المشاهد للحركة المهمة، ويضيف إحساساً بالسرعة والاحترافية. FFmpeg ينفذه عبر فلتر `zoompan`.
+
+### 🔴 Zoom In (تقرّيب بطيء إلى نقطة محددة)
+أشهر استخدام: تركيز على الكيل/الوجه/التفصيلة المهمة.
+```bash
+# تقريب بطيء من 1x إلى 1.6x على مركز الصورة خلال 3 ثواني
+ffmpeg -i clip.mp4 -vf "zoompan=z='min(zoom+0.0025,1.6)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=25*3:s=1920x1080:fps=30" -c:v libx264 -crf 18 -c:a copy output.mp4
+```
+
+### 🟢 Zoom Out (تبعيد بطيء - افتراض البداية)
+للانتقال من قريب (متوتر) إلى بعيد (كاشف للمشهد).
+```bash
+# تخفيف من 1.6x إلى 1x خلال 3 ثواني
+ffmpeg -i clip.mp4 -vf "zoompan=z='if(lte(zoom,1),1.6,max(1.001,zoom-0.0025))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=25*3:s=1920x1080:fps=30" -c:v libx264 -crf 18 output.mp4
+```
+
+### 💥 Zoom Punch (تقرّب سريع لحظي - للأفكتات)
+للضرب السريع عند الكيل أو الحدث.
+```bash
+ffmpeg -i clip.mp4 -vf "zoompan=z='min(zoom+0.015,1.5)'" -c:v libx264 -crf 18 output.mp4
+```
+
+### 🎯 Zoom على نقطة معينة (مثلاً وجه/إصابة)
+غيّر `x` و `y` لتحدد مركز التكبير (النسب من 0 إلى iw/ih):
+```bash
+# تقريب على الجزء الأيمن السفلي من الصورة
+ffmpeg -i clip.mp4 -vf "zoompan=z='min(zoom+0.003,1.5)':x='iw*0.7-(iw/zoom/2)':y='ih*0.7-(ih/zoom/2)':d=25*2:s=1920x1080:fps=30" -c:v libx264 -crf 18 output.mp4
+```
+
+### 📌 نصائح Zoom احترافية
+- **هل هو للفيديو الحقيقي "كما بُث"؟** الـ zoom بنسخ فريمات يخلي الحركة أقوى — جرب قيم `d` صغيرة للتقرّب السريع.
+- الـ zoom متزامن مع الإيقاع (على الـ beat) يبدو أسطورياً.
+- بعد zoom، فـلتقط على جزء مكبّر يكون أوضح (لكن الجودة تقل قليلاً).
+
+---
+
+## 👑 الإنتقالة الأسطورية بين لقطتين عند القص (Cut)
+> "الكات المميت" = انتقال بين لقطتين بأسلوب يجعل المشاهد يتفاعل (zoom burst + flash + whoosh صوتي). هذي الإنتقالات الأكثر انتشاراً في مونتاج الألعاب الحديثة.
+
+### ⚡ التقنيات الأسطورية (كلها عبر `xfade`)
+
+#### 1) Zoom Burst (تقريب + انفجار) — الأكثر شهرة 🔥
+```bash
+ffmpeg -i v1.mp4 -i v2.mp4 -filter_complex \
+"[0:v]zoompan=z='min(zoom+0.02,2)':d=1:s=1920x1080:fps=30[zo];\
+[1:v]trim=0:0.5,setpts=PTS-STARTPTS[in2];\
+[zo][in2]xfade=transition=zoomin:duration=0.4:offset=1[v]" \
+-map "[v]" output.mp4
+```
+
+#### 2) Flash / White Flash (وميض أبيض) — انتقال نظيف
+```bash
+ffmpeg -i v1.mp4 -i v2.mp4 -filter_complex \
+"color=white:s=1920x1080:d=1,format=yuv420p[flash];\
+[0:v][1:v]xfade=transition=fade:duration=0.3:offset=2, \
+[flash]xfade=..." 
+```
+
+#### 3) Smooth Zoom (تقريب ناعم بين القطع) — للمشاهد الواقعية
+```bash
+ffmpeg -i v1.mp4 -i v2.mp4 -filter_complex \
+"[0:v]zoompan=z='min(zoom+0.004,1.2)':d=25*1.5:s=1920x1080:fps=30[c1];\
+[1:v]zoompan=z='max(zoom-0.004,0.8)':d=25*1.5:s=1920x1080:fps=30[c2];\
+[c1][c2]xfade=transition=fade:duration=0.5:offset=1.5[v]" \
+-map "[v]" output.mp4
+```
+
+#### 4) Whip Pan / Whoosh (حركة سلسة سريعة) — انتقال مشهور
+أسلوب: اللقطة الأولى "تنسحب" بسرعة أفقياً والثانية تدخل. يُنفّذ عادة بمزج عمودي مع تسارع:
+```bash
+ffmpeg -i v1.mp4 -i v2.mp4 -filter_complex \
+"[1:v]zoompan=z='min(zoom+0.02,1.5)':d=1:s=1920x1080:fps=30[in2];\
+[0:v][in2]xfade=transition=slideleft:duration=0.35:offset=1[v]" \
+-map "[v]" output.mp4
+```
+
+#### 5) الأفضل عملياً: zoompan + xfade سوية مع boom صوتي
+اجمع التقريب البصري مع حفيف (whoosh) انتقالي. أضف صوته عبر `adelay` كما في قسم SFX. النصيحة: عند استخدام `zoompan` بعد `xfade` يضيع المزامنة أحياناً، فالأفضل تطبيق `zoompan` على فيديو منفصل ثم ادمجه — أو استخدم قيم `d` صغيرة.
+
+> **⚠️ قاعدة مهمة:** `xfade` يتطلب أن تبدي المقاطع الثواني التي تريد تداخل فيها — استخدم `trim`/`setpts` لكل مقطع قبل الخلط. وتحقق دائماً أن `offset = مدة القطعة الأولى - duration`.
+
+### 🎵 الربط مع الـ SFX (اللمسة الأخيرة)
+الإنتقالة البصرية بدون صوت = ناقصة. أضف `Whoosh` أو `Boom` على نقطة التبديل (سواء CUT أو xfade) عبر `adelay`.
+```bash
+ffmpeg -i output.mp4 -i "C:\Users\mr_ali7685\Documents\مونتاج\SFX Transition\Whoosh 1.mp3" -filter_complex "[1:a]adelay=1500|1500[sfx];[0:a][sfx]amix=inputs=2[a]" -map "[a]" output_final.mp4
+```
+
 ## 4. التحكم بالسرعة (Speed)
 
 > **⚠️ مهم جداً لتفادي تعليق الصورة (VFR):** إذا كان المصدر بمعدل فريمات غير ثابت (كما في تسجيلات GeForce NOW) وقد كرّرت القص والتسريع، احرص بعد تغيير السرعة على تثبيت الفريمات إلى معدل ثابت (CFR) للحفاظ على sync:
