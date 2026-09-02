@@ -101,6 +101,7 @@ opencode-video-editor/
 
 ---
 
+## معلومة مهمة يرجى عدم استخدام Windows Media Player لأنه لايعمل مع الفيديوات التي يمنتجها OpenCode لسبب غير معروف
 ## 👤 المؤلف / Author
 
 صُنع بواسطة **MR_ALI7685** باستخدام opencode + FFmpeg.
