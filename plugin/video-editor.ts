@@ -1,6 +1,7 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
 import * as fs from "fs"
 import * as path from "path"
+import { VDSPlugin, vds } from "./vds_plugin.js"
 
 const BASE = "C:/Users/mr_ali7685/Documents/مونتاج"
 
@@ -83,6 +84,10 @@ function align(a?: string) {
 }
 
 export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
+  // Initialize VDS on plugin load
+  await vds.initialize()
+  console.log('[VDS] Virtual Data Space initialized at:', vds.getVDSPath())
+  
   return {
     tool: {
       video_montage: tool({
@@ -235,6 +240,17 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
               "proxy_auto",
               "conform_xml",
               "metadata_edit",
+              // 🧠 VDS (Virtual Data Space) - Persistent Memory
+              "vds_init",
+              "vds_consent",
+              "vds_identity",
+              "vds_preferences",
+              "vds_memory",
+              "vds_sessions",
+              "vds_status",
+              "vds_export",
+              "vds_import",
+              "vds_reset",
             ])
             .describe("العملية التي تريد تنفيذها"),
           input: tool.schema.string().optional().describe("مسار ملف الإدخال"),
@@ -493,6 +509,32 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
           proxy_trigger: tool.schema.enum(["import", "manual", "size>4k"]).optional().describe("محفز البروكسي"),
           conform_format: tool.schema.enum(["fcpxml", "edl", "aaf", "prproj"]).optional().describe("صيغة الكونفورم"),
           metadata_schema: tool.schema.enum(["xmp", "exif", "iptc", "custom"]).optional().describe("مخطط البيانات الوصفية"),
+          // 🧠 VDS (Virtual Data Space) Parameters
+          vds_category: tool.schema.enum(["identity", "preferences", "memory", "sessions", "analytics"]).optional().describe("فئة الموافقة: identity, preferences, memory, sessions, analytics"),
+          vds_grant: tool.schema.boolean().optional().describe("منح الموافقة: true/false"),
+          vds_reason: tool.schema.string().optional().describe("سبب طلب الموافقة"),
+          vds_name: tool.schema.string().optional().describe("الاسم للهوية"),
+          vds_age: tool.schema.number().optional().describe("العمر للهوية"),
+          vds_country: tool.schema.string().optional().describe("البلد للهوية"),
+          vds_company: tool.schema.string().optional().describe("الشركة للهوية"),
+          vds_projects: tool.schema.string().optional().describe("المشاريع كـ JSON array"),
+          vds_style: tool.schema.enum(["gaming", "cinematic", "podcast", "vlog", "educational", "commercial", "music_video"]).optional().describe("ستايل المونتاج المفضل"),
+          vds_tools: tool.schema.string().optional().describe("الأدوات المفضلة كـ JSON array"),
+          vds_luts: tool.schema.string().optional().describe("LUTs المفضلة كـ JSON array"),
+          vds_sfx_cats: tool.schema.string().optional().describe("تصنيفات SFX المفضلة كـ JSON array"),
+          vds_exports: tool.schema.string().optional().describe(" قوالب التصدير الافتراضية كـ JSON array"),
+          vds_lang: tool.schema.enum(["ar", "en", "both"]).optional().describe("اللغة المفضلة"),
+          vds_session_id: tool.schema.string().optional().describe("معرف الجلسة للذاكرة"),
+          vds_action: tool.schema.string().optional().describe("الإجراء للذاكرة"),
+          vds_input: tool.schema.string().optional().describe("المدخل للذاكرة"),
+          vds_output: tool.schema.string().optional().describe("المخرج للذاكرة"),
+          vds_tools_used: tool.schema.string().optional().describe("الأدوات المستخدمة كـ JSON array"),
+          vds_result: tool.schema.enum(["success", "partial", "failed"]).optional().describe("نتيجة العملية"),
+          vds_notes: tool.schema.string().optional().describe("ملاحظات"),
+          vds_lessons: tool.schema.string().optional().describe("الدروس المستفادة كـ JSON array"),
+          vds_search: tool.schema.string().optional().describe("بحث في الذاكرة"),
+          vds_limit: tool.schema.number().optional().describe("حد عدد المدخلات"),
+          vds_confirm: tool.schema.boolean().optional().describe("تأكيد المسح الكامل"),
         },
         async execute(args, context) {
           const a = args
@@ -1694,6 +1736,124 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
                 const schema = a.metadata_schema ?? "xmp"
                 cmd = `python -m metadata_edit --schema ${schema} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Metadata edited" > ${QUOT(out)}`
                 break
+              }
+              // 🧠 VDS (Virtual Data Space) Cases
+              case "vds_init": {
+                await vds.initialize()
+                const status = vds.getStatus()
+                return `### VDS Initialized ✅\nالمسار: \`${status.initialized ? status.files.join(', ') : 'لا توجد ملفات'}\`\nالمجلد: \`${vds.getVDSPath()}\`\nالموافقة: ${JSON.stringify(status.consent, null, 2)}`
+              }
+              case "vds_consent": {
+                await vds.initialize()
+                const category = a.vds_category as keyof import("./vds_types.js").VDSConsent
+                const grant = a.vds_grant ?? false
+                if (grant) {
+                  vds.grantConsent(category)
+                  return `✅ تم منح الموافقة لـ: ${category}`
+                } else {
+                  const has = vds.hasConsent(category)
+                  return `الموافقة لـ "${category}": ${has ? 'ممنوحة ✅' : 'غير ممنوحة ❌'}\nالسبب: ${a.vds_reason ?? 'غير محدد'}`
+                }
+              }
+              case "vds_identity": {
+                await vds.initialize()
+                if (!vds.hasConsent('identity')) {
+                  return `❌ لم تمنح موافقة للهوية. استخدم vds_consent مع vds_grant=true`
+                }
+                if (a.vds_name || a.vds_age || a.vds_country || a.vds_company) {
+                  vds.setIdentity({
+                    name: a.vds_name ?? '',
+                    age: a.vds_age ?? 0,
+                    country: a.vds_country ?? '',
+                    company: a.vds_company ?? '',
+                    projects: a.vds_projects ? JSON.parse(a.vds_projects) : []
+                  })
+                  return `✅ تم حفظ الهوية: ${a.vds_name}`
+                } else {
+                  const id = vds.getIdentity()
+                  return id ? `الهوية المحفوظة:\n${JSON.stringify(id, null, 2)}` : 'لا توجد هوية محفوظة'
+                }
+              }
+              case "vds_preferences": {
+                await vds.initialize()
+                if (!vds.hasConsent('preferences')) {
+                  return `❌ لم تمنح موافقة للتفضيلات. استخدم vds_consent مع vds_grant=true`
+                }
+                if (a.vds_style || a.vds_tools || a.vds_luts || a.vds_sfx_cats || a.vds_exports || a.vds_lang) {
+                  vds.setPreferences({
+                    montage_style: a.vds_style,
+                    favorite_tools: a.vds_tools ? JSON.parse(a.vds_tools) : undefined,
+                    preferred_luts: a.vds_luts ? JSON.parse(a.vds_luts) : undefined,
+                    preferred_sfx_categories: a.vds_sfx_cats ? JSON.parse(a.vds_sfx_cats) : undefined,
+                    default_export_presets: a.vds_exports ? JSON.parse(a.vds_exports) : undefined,
+                    language: a.vds_lang
+                  })
+                  return `✅ تم تحديث التفضيلات`
+                } else {
+                  const prefs = vds.getPreferences()
+                  return prefs ? `التفضيلات المحفوظة:\n${JSON.stringify(prefs, null, 2)}` : 'لا توجد تفضيلات محفوظة'
+                }
+              }
+              case "vds_memory": {
+                await vds.initialize()
+                if (!vds.hasConsent('memory')) {
+                  return `❌ لم تمنح موافقة للذاكرة. استخدم vds_consent مع vds_grant=true`
+                }
+                if (a.vds_action && a.vds_tools_used && a.vds_result) {
+                  vds.addMemoryEntry({
+                    session_id: a.vds_session_id ?? `session_${Date.now()}`,
+                    action: a.vds_action,
+                    input: a.vds_input ?? '',
+                    output: a.vds_output ?? '',
+                    tools_used: JSON.parse(a.vds_tools_used),
+                    result: a.vds_result,
+                    notes: a.vds_notes ?? '',
+                    lessons_learned: a.vds_lessons ? JSON.parse(a.vds_lessons) : []
+                  })
+                  return `✅ تم حفظ مدخل الذاكرة`
+                } else if (a.vds_search) {
+                  const results = vds.searchMemory(a.vds_search)
+                  return `نتائج البحث (${results.length}):\n${results.map(r => `- ${r.timestamp}: ${r.action} [${r.tools_used.join(', ')}]`).join('\n')}`
+                } else if (a.vds_limit) {
+                  const entries = vds.getMemory(a.vds_limit)
+                  return `آخر ${entries.length} مدخل:\n${entries.map(e => `- ${e.timestamp}: ${e.action} (${e.result})`).join('\n')}`
+                } else {
+                  const entries = vds.getMemory(10)
+                  return `آخر 10 مدخلات:\n${entries.map(e => `- ${e.timestamp}: ${e.action} (${e.result})`).join('\n')}`
+                }
+              }
+              case "vds_sessions": {
+                await vds.initialize()
+                if (!vds.hasConsent('sessions')) {
+                  return `❌ لم تمنح موافقة للجلسات. استخدم vds_consent مع vds_grant=true`
+                }
+                return `الجلسات تدار تلقائياً مع كل عملية مونتاج`
+              }
+              case "vds_status": {
+                await vds.initialize()
+                const status = vds.getStatus()
+                return `### VDS Status\nالمسار: \`${status.initialized ? vds.getVDSPath() : 'غير مهيأ'}\`\nالملفات: ${status.files.join(', ') || 'لا توجد'}\nالموافقة: ${JSON.stringify(status.consent, null, 2)}`
+              }
+              case "vds_export": {
+                await vds.initialize()
+                const data = vds.exportAll()
+                const out = a.output ?? path.join(vds.getVDSPath(), `vds_backup_${Date.now()}.json`)
+                fs.writeFileSync(out, data, 'utf-8')
+                return `✅ تم تصدير البيانات إلى: ${out}`
+              }
+              case "vds_import": {
+                await vds.initialize()
+                const file = a.input
+                if (!file || !fs.existsSync(file)) return `❌ ملف غير موجود: ${file}`
+                const json = fs.readFileSync(file, 'utf-8')
+                if (vds.importAll(json)) return `✅ تم استيراد البيانات من: ${file}`
+                return `❌ فشل الاستيراد`
+              }
+              case "vds_reset": {
+    const confirm = a.vds_confirm ?? false
+                if (!confirm) return `⚠️ للتأكيد، أضف vds_confirm=true`
+                vds.resetAll()
+                return `✅ تم مسح جميع بيانات VDS`
               }
               default:
                 return `عملية غير معروفة: ${a.action}`
