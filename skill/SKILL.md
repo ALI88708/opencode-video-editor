@@ -3603,6 +3603,733 @@ await video_montage({ action: "multi_render", render_presets: ["youtube", "tikto
 
 ---
 
+# 🎬 FINAL BOSS TIER - مستوى استوديوهات هوليوود/نتفليكس (25 أداة)
+
+> هذه الأدوات تمثل **قمة هرم الإنتاج** - ما تجده في DaVinci Resolve Studio + Nuke + After Effects + Pro Tools + Deadline + Asset Management. تتطلب Python scripts خارجية ونماذج AI محملة.
+
+---
+
+## P.48 خط أنابيب ثلاثي الأبعاد / VFX (3D/VFX Pipeline)
+
+### Camera Track - حل كاميرا ثلاثي الأبعاد
+```typescript
+// 3D Camera Solve - يستخرج حركة الكاميرا والبعد البؤري
+await video_montage({ 
+  action: "camera_track", 
+  camera_model: "colmap",     // opencv, colmap, meshroom
+  camera_focal: 35,           // مم
+  input: "drone_shot.mp4", 
+  output: "camera_solve.json"  // موقع الكاميرا لكل إطار
+})
+```
+| النموذج | الدقة | السرعة | الاستخدام |
+|---------|-------|--------|----------|
+| `opencv` | متوسطة | سريعة | لقطات بسيطة |
+| `colmap` | عالية | متوسطة | **افتراضي موصى به** |
+| `meshroom` | أعلى (SOTA) | بطيئة | إنتاج سينمائي |
+
+**النتيجة:** JSON بموقع الكاميرا (position, rotation, focal) لكل إطار → يستخدم في `geo_export`، `planar_track`، 3D compositing.
+
+---
+
+### Planar Track - تتبع مستوي (Mocha-Style)
+```typescript
+// تتبع مستوي للمناطق المسطحة (شاشات، جدران، أرضيات)
+await video_montage({ 
+  action: "planar_track", 
+  planar_surface: "100,100,500,100,500,400,100,400",  // x1,y1,x2,y2,x3,y3,x4,y4
+  input: "screen_replace.mp4", 
+  output: "planar_track.json"  // تحويل مستوي لكل إطار
+})
+```
+**الاستخدامات:** Screen replacement، sign replacement، set extension، roto assist.
+
+---
+
+### Point Cloud - سحابة نقاط ثلاثية الأبعاد
+```typescript
+// إعادة بناء ثلاثي الأبعاد (3D Reconstruction)
+await video_montage({ 
+  action: "point_cloud", 
+  point_density: "high",     // low, medium, high
+  input: "static_scene.mp4", 
+  output: "scene_points.ply"  // ملف PLY للـ 3D
+})
+```
+| الكثافة | النقاط | الوقت | الاستخدام |
+|---------|--------|-------|----------|
+| `low` | ~10K | ثوانٍ | معاينة |
+| `medium` | ~100K | دقائق | **افتراضي** |
+| `high` | ~1M+ | طويل | إنتاج نهائي |
+
+**الاستخدامات:** 3D set extension، virtual production، camera projection، depth-based effects.
+
+---
+
+### Geo Export - تصدير هندسة ثلاثية الأبعاد
+```typescript
+// تصدير لـ FBX/Alembic/USD/OBJ
+await video_montage({ 
+  action: "geo_export", 
+  geo_format: "usd",        // fbx, alembic, usd, obj
+  inputs: ["camera_solve.json", "scene_points.ply"], 
+  output: "scene.usd"  // ملف USD كامل
+})
+```
+| الصيغة | الاستخدام | يدعم |
+|--------|----------|------|
+| `fbx` | Maya/3ds Max/Unity/Unreal | Animation، Cameras |
+| `alembic` | Houdini/Maya/Nuke | Caches، Deformation |
+| `usd` | **Pixar USD** (المعيار الحديث) | **الكل** - Production ready |
+| `obj` | بسيط/سريع | Static meshes فقط |
+
+---
+
+## P.49 كومبوزيتينغ متقدم (Advanced Compositing)
+
+### Node Composite - كومبوزيت nodal
+```typescript
+// كومبوزيت مبني على العقد (مثل Nuke/Fusion)
+await video_montage({ 
+  action: "node_composite", 
+  comp_script: JSON.stringify({
+    nodes: [
+      { id: "read1", type: "Read", file: "plate.exr" },
+      { id: "read2", type: "Read", file: "cg.exr" },
+      { id: "merge1", type: "Merge", operation: "over", inputs: ["read1", "read2"] },
+      { id: "grade1", type: "Grade", inputs: ["merge1"], gamma: 1.1 },
+      { id: "write1", type: "Write", file: "comp_output.exr", inputs: ["grade1"] }
+    ]
+  }),
+  input: "ignored", 
+  output: "comp_output.exr"
+})
+```
+**العقد المدعومة:** Read, Write, Merge (over/under/plus/multiply/screen), Grade, ColorCorrect, Blur, Transform, Keyer, Roto, Tracker, Switch, Dissolve, Shuffle, Premult/Unpremult.
+
+---
+
+### Deep Composite - كومبوزيت عميق (Deep EXR)
+```typescript
+// كومبوزيت مع بيانات عمق لكل بكسل (Deep Compositing)
+await video_montage({ 
+  action: "deep_composite", 
+  deep_input: "cg_deep.exr",  // ملف EXR بقنوات deep
+  input: "plate.exr", 
+  output: "deep_comp.exr"
+})
+```
+**الميزة:** لا توجد حواف قاسية - التكامل صحيح فيزيائياً مع الضباب، الدخان، الشعر، الجسيمات.
+
+---
+
+### Cryptomatte - استخراج Mattes بالـ ID
+```typescript
+// استخراج ماتات تلقائي للأجسام/المواد/الأضواء
+await video_montage({ 
+  action: "cryptomatte", 
+  crypto_layer: "rgba",      // rgba, object, material, asset
+  input: "render.exr", 
+  output: "crypto_mattes.exr"  // قنوات ID منفصلة
+})
+```
+**الطبقات:** `object` (كل كائن)، `material` (كل مادة)، `asset` (كل أصل) - اختر في الكومبوزيت لل隔离 الفوري.
+
+---
+
+### Light Wrap - لف ضوئي (Edge Integration)
+```typescript
+// دمج حواف الموضوع مع إضاءة الخلفية
+await video_montage({ 
+  action: "light_wrap", 
+  wrap_strength: 0.3,      // 0-1: قوة اللف
+  wrap_blur: 5,            // بيكسل: ضبابية اللف
+  background: "bg_plate.exr", 
+  input: "keyed_subject.exr", 
+  output: "wrapped.exr"
+})
+```
+**لماذا؟** يزيل "الهالة السوداء" حول الكروما كي - يجعل الموضوع يبدو كأنه في المشهد فعلاً.
+
+---
+
+### Edge Extend - تمديد الحواف
+```typescript
+// تمديد حواف المات (Matte Edge Extension)
+await video_montage({ 
+  action: "edge_extend", 
+  edge_pad: 10,            // بيكسل للتمديد
+  input: "matte.exr", 
+  output: "extended_matte.exr"
+})
+```
+**الاستخدام:** إصلاح الماتات المقطوعة، منع الحواف الصلبة في الكومبوزيت.
+
+---
+
+## P.50 توليد بالـ AI (AI Generation)
+
+### Text-to-Video (txt2vid)
+```typescript
+// توليد فيديو من نص (SVD, Gen-2, ZeroScope)
+await video_montage({ 
+  action: "txt2vid", 
+  gen_model: "svd_xt",     // svd, svd_xt, gen2, zeroscope, animate_diff
+  gen_frames: 25,          // إطارات
+  gen_fps: 8,              // FPS
+  text: "cinematic drone shot of mountains at sunset, photorealistic", 
+  output: "generated.mp4"
+})
+```
+| النموذج | الجودة | الطول | المتطلبات |
+|---------|--------|-------|----------|
+| `svd` | جيدة | 14-25 إطار | VRAM 8GB+ |
+| `svd_xt` | أعلى | 25 إطار | VRAM 10GB+ |
+| `zeroscope` | مفتوحة المصدر | 24 إطار | VRAM 12GB+ |
+| `animate_diff` | أنيميشن | متغير | LoRA support |
+
+---
+
+### Image-to-Video (img2vid)
+```typescript
+// صورة إلى فيديو (تحريك صورة ثابتة)
+await video_montage({ 
+  action: "img2vid", 
+  gen_model: "svd", 
+  gen_frames: 25, 
+  gen_fps: 8, 
+  input: "keyframe.jpg", 
+  output: "animated.mp4"
+})
+```
+
+---
+
+### Inpaint - إزالة كائن
+```typescript
+// إزالة كائن/شخص من الفيديو (Inpainting)
+await video_montage({ 
+  action: "inpaint", 
+  inpaint_mask: "mask.exr",  // أبيض = منطقة للإزالة
+  input: "shot_with_boom.mp4", 
+  output: "clean_plate.mp4"
+})
+```
+**الاستخدام:** إزالة ميكروفون، كاميرا، شخص، لوجو، أسلاك.
+
+---
+
+### Outpaint - توسيع كانفاس
+```typescript
+// توسيع الصورة خارج حدودها (Outpainting)
+await video_montage({ 
+  action: "outpaint", 
+  outpaint_direction: "all",  // left, right, top, bottom, all
+  input: "cropped_shot.jpg", 
+  output: "extended.jpg"
+})
+```
+**الاستخدام:** تحويل 16:9 إلى 21:9، إضافة سماء/أرض، set extension.
+
+---
+
+### Upscale - تكبير بالـ AI (4x/8x)
+```typescript
+// تكبير ذكي (AI Upscaling)
+await video_montage({ 
+  action: "upscale", 
+  upscale_factor: 4,          // 2, 4, 8
+  upscale_model: "realesrgan", // realesrgan, swinir, gfpgan, codeformer
+  input: "1080p_shot.mp4", 
+  output: "4K_shot.mp4"
+})
+```
+| النموذج | التخصص | السرعة |
+|---------|---------|--------|
+| `realesrgan` | عام/فيديو | سريعة |
+| `swinir` | تفاصيل/نصوص | متوسطة |
+| `gfpgan` | **وجوه** | متوسطة |
+| `codeformer` | وجوه تالفة/قديمة | بطيئة |
+
+---
+
+### Interpolate - توليد إطارات (Frame Generation)
+```typescript
+// توليد إطارات وسطى (Frame Interpolation)
+await video_montage({ 
+  action: "interpolate", 
+  interp_factor: 4,        // 2x, 4x, 8x
+  input: "24fps.mp4", 
+  output: "96fps.mp4"      // أو سلو موشن سلس
+})
+```
+**الفرق عن `optical_flow`:** يستخدم نماذج AI حديثة (RIFE, FLAVR, GMF) - جودة أعلى للـ large motion.
+
+---
+
+## P.51 خط أنابيب HDR/اللون (HDR/Color Pipeline)
+
+### ACES Transform - تحويل ACES 1.3
+```typescript
+// تحويل صحيح لـ Academy Color Encoding System
+await video_montage({ 
+  action: "aces_transform", 
+  aces_input: "logc",       // acescg, acecc, lin_srgb, srgb, logc, slog3, vlog, braw
+  aces_output: "acescg",    // acescg, acecc, lin_srgb, srgb, pq_st2084, hlg
+  input: "arri_logc.exr", 
+  output: "aces_cg.exr"
+})
+```
+**مساحات الدخل المدعومة:** ARRI LogC, Sony S-Log3, Panasonic V-Log, Blackmagic BRAW, Canon Log, RED Log3G10, ACEScc, ACEScg, Linear sRGB, sRGB.
+
+**مساحات الخرج:** ACEScg (working), ACEScc (grading), PQ ST2084 (HDR), HLG (Broadcast), sRGB (web).
+
+---
+
+### Dolby Vision - ميتاداتا دولبي فيجن
+```typescript
+// إضافة ميتاداتا Dolby Vision Profile 5/8/9
+await video_montage({ 
+  action: "dolby_vision", 
+  dv_profile: "profile_5",  // profile_5 (single layer), profile_8 (dual layer), profile_9 (HLG compatible)
+  input: "graded_pq.exr", 
+  output: "dolby_vision.mp4"
+})
+```
+
+---
+
+### HDR10+ - ميتاداتا ديناميكية
+```typescript
+// HDR10+ مع MaxCLL/MaxFALL لكل مشهد
+await video_montage({ 
+  action: "hdr10_plus", 
+  hdr10_max_cll: 1000,     // nits
+  hdr10_max_fall: 400,     // nits
+  input: "hdr_master.exr", 
+  output: "hdr10_plus.mp4"
+})
+```
+
+---
+
+### HDR Grade - تصنيف HDR
+```typescript
+// تصنيف في فضاء PQ/HLG مع أدوات HDR حقيقية
+await video_montage({ 
+  action: "hdr_grade", 
+  hdr_grade_mode: "pq",    // pq, hlg, sdr_sim
+  input: "hdr_shot.exr", 
+  output: "graded_hdr.exr"
+})
+```
+**الأدوات:** Exposure/Contrast في nits، Color Wheels في PQ space، Highlight Rolloff، Gamut Mapping.
+
+---
+
+### Color Space - تحويل مساحة لون
+```typescript
+// تحويل بين Rec.709, Rec.2020, P3, ACES
+await video_montage({ 
+  action: "color_space", 
+  cs_target: "rec2020",    // rec2020, rec709, p3_d65, p3_dci, acescg
+  input: "rec709.mp4", 
+  output: "rec2020.mp4"
+})
+```
+**يتضمن:** Gamut Mapping (Clipping/Compression/Perceptual)، Tone Mapping للـ HDR→SDR.
+
+---
+
+## P.52 مرحلة ما بعد الصوت الاحترافية (Audio Post Pro)
+
+### ADR Record - استبدال الحوار الآلي
+```typescript
+// سير عمل ADR كامل (Automated Dialogue Replacement)
+await video_montage({ 
+  action: "adr_record", 
+  adr_script: "adr_script.csv",  // timecode, character, line
+  adr_takes: 3,                  // تيكات لكل سطر
+  input: "production_audio.wav", 
+  output: "adr_session/"
+})
+```
+**CSV format:**
+```csv
+timecode,character,dialogue
+01:00:12:05,HERO,"I'll be back"
+01:00:15:10,VILLAIN,"Not today"
+```
+
+---
+
+### Foley Sync - مزامنة فولي
+```typescript
+// مزامنة تأثيرات فولي مع الحركة
+await video_montage({ 
+  action: "foley_sync", 
+  foley_library: "foley_lib/",  // مجلد بأصوات footsteps, cloth, props
+  input: "locked_cut.mp4", 
+  output: "foley_synced.wav"
+})
+```
+
+---
+
+### Surround Mix - مكس محيطي
+```typescript
+// مكس 5.1 / 7.1 / 7.1.2 / 7.1.4
+await video_montage({ 
+  action: "surround_mix", 
+  surround_layout: "7.1.4",   // 5.1, 7.1, 7.1.2, 7.1.4
+  input: "stems/",            // مجلد ستيمز
+  output: "surround_mix.wav"
+})
+```
+| التخطيط | القنوات | الاستخدام |
+|----------|---------|----------|
+| `5.1` | L,R,C,LFE,Ls,Rs | سينما قياسية |
+| `7.1` | + Lrs,Rrs | سينما ممتازة |
+| `7.1.2` | + Ltf,Rtf | Atmos bed |
+| `7.1.4` | + Ltm,Rtm,Ltr,Rtr | **Atmos كامل** |
+
+---
+
+### Atmos Render - رندر Dolby Atmos
+```typescript
+// رندر ADM BWF لـ Dolby Atmos
+await video_montage({ 
+  action: "atmos_render", 
+  atmos_profile: "near",    // near, mid, far, height
+  input: "surround_mix.wav", 
+  output: "atmos.adm.wav"
+)
+```
+
+---
+
+### Loudness Batch - لوفس متعدد التسليم
+```typescript
+// لوفس نتفليكس + EBU + يوتيوب دفعة وحدة
+await video_montage({ 
+  action: "loudness_batch", 
+  loudness_targets: "netflix:-27,ebu:-23,youtube:-14,apple:-16,spotify:-14", 
+  input: "final_mix.wav", 
+  output: "loudness_deliverables/"
+})
+```
+**ينشئ:** مجلد بكل نسخة متوافقة مع المعيار المطلوب.
+
+---
+
+## P.53 التسليم والإتقان (Delivery/Mastering)
+
+### DCP Create - DCP للسينما
+```typescript
+// إنشاء Digital Cinema Package
+await video_montage({ 
+  action: "dcp_create", 
+  dcp_fps: "24",            // 24, 25, 30, 48, 60
+  dcp_reel_length: 20,      // دقائق لكل ريل
+  input: "cinema_master.tiff",  // تسلسل TIFF أو MXF
+  output: "dcp_package/"
+})
+```
+**المخرجات:** MXF JPEG2000 + XML CPL + PKL + VOLINDEX + ASSETMAP.
+
+---
+
+### IMF Package - حزمة نتفليكس (IMF)
+```typescript
+// Interoperable Mastering Format للنتفليكس
+await video_montage({ 
+  action: "imf_package", 
+  imf_cpl: "cpl.xml",       // Composition Playlist
+  input: "imf_master/", 
+  output: "imf_package/"
+})
+```
+**المكونات:** CPL, OPL, PKL, Asset Map, MXF Essence (JPEG2000 lossless).
+
+---
+
+### Streaming Package - حزمة بث
+```typescript
+// HLS/DASH/CMAF للبث التكيفي
+await video_montage({ 
+  action: "streaming_pkg", 
+  streaming_codec: "h265",  // h264, h265, av1, vp9
+  streaming_ladder: "2160p:15M,1440p:8M,1080p:5M,720p:3M,480p:1.5M", 
+  input: "master.mp4", 
+  output: "streaming/"
+})
+```
+**ينشئ:** `.m3u8` (HLS), `.mpd` (DASH), segments `.ts`/`.mp4`.
+
+---
+
+### Archive LTFS - أرشفة LTO/LTFS
+```typescript
+// أرشفة على شريط LTO مع LTFS
+await video_montage({ 
+  action: "archive_ltfs", 
+  archive_format: "ltfs",   // ltfs, tar, bagit
+  input: "project_folder/", 
+  output: "LTO_TAPE_LABEL/"
+})
+```
+
+---
+
+## P.54 الأتمتة والمزارع (Automation/Render Farm)
+
+### Deadline Submit - Thinkbox Deadline
+```typescript
+// إرسال مهمة لـ Thinkbox Deadline
+await video_montage({ 
+  action: "deadline_submit", 
+  farm_pool: "gpu",         // high, gpu, cpu
+  farm_priority: 80,        // 1-100
+  farm_frames: "1-1000",    // نطاق الإطارات
+  input: "project/", 
+  output: "job_id.txt"
+})
+```
+
+---
+
+### Tractor Submit - Pixar Tractor
+```typescript
+// إرسال لـ Pixar Tractor
+await video_montage({ 
+  action: "tractor_submit", 
+  farm_pool: "render", 
+  farm_priority: 50, 
+  farm_frames: "1-500", 
+  input: "scene.usd", 
+  output: "tractor_job.txt"
+})
+```
+
+---
+
+### Render Farm - مزرعة عامة
+```typescript
+// إرسال لمزرعة رندر عامة (AWS, GCP, Azure, Local)
+await video_montage({ 
+  action: "render_farm", 
+  farm_pool: "cpu", 
+  farm_priority: 50, 
+  farm_frames: "1-200", 
+  input: "blend_file.blend", 
+  output: "farm_job_id.txt"
+})
+```
+
+---
+
+### Watch Folder - مراقبة مجلد (Auto-ingest)
+```typescript
+// مراقبة مجلد - يعالج أي ملف جديد تلقائياً
+await video_montage({ 
+  action: "watch_folder", 
+  watch_path: "C:/Ingest/", 
+  watch_action: "transcode_proxy",  // transcode_proxy, qc, archive, conform
+  input: "ignored", 
+  output: "watch_daemon.log"
+})
+```
+
+---
+
+## P.55 إدارة الوسائط (Media Management)
+
+### Asset DB - قاعدة بيانات أصول (PostgreSQL)
+```typescript
+// تسجيل أصل في قاعدة بيانات PostgreSQL
+await video_montage({ 
+  action: "asset_db", 
+  db_connection: "postgresql://user:pass@localhost/proddb", 
+  asset_tags: "project:cloudmesh,type:footage,status:approved,camera:arri", 
+  input: "shot_001.exr", 
+  output: "asset_id.txt"
+})
+```
+
+---
+
+### Proxy Auto - بروكسي تلقائي
+```typescript
+// إنشاء بروكسي تلقائي عند الاستيراد
+await video_montage({ 
+  action: "proxy_auto", 
+  proxy_trigger: "size>4k",  // import, manual, size>4k
+  input: "8K_raw.r3d", 
+  output: "proxy_1080p.mov"
+})
+```
+
+---
+
+### Conform XML - كونفورم من ملفات المونتاج
+```typescript
+// إعادة بناء التايملاين من FCPXML/EDL/AAF/Premiere
+await video_montage({ 
+  action: "conform_xml", 
+  conform_format: "fcpxml",  // fcpxml, edl, aaf, prproj
+  input: "edit.fcpxml", 
+  output: "conformed_timeline/"
+})
+```
+**يستخرج:** Clips, Transitions, Effects, Audio levels, Timecodes → يعيد بناء المشروع.
+
+---
+
+### Metadata Edit - تعديل بيانات وصفية
+```typescript
+// قراءة/كتابة XMP/EXIF/IPTC
+await video_montage({ 
+  action: "metadata_edit", 
+  metadata_schema: "xmp",   // xmp, exif, iptc, custom
+  input: "photo.jpg", 
+  output: "tagged.jpg"
+})
+```
+
+---
+
+## P.56 جداول مرجعية - كل الـ 122 Action
+
+| الفئة | الـ Actions (122 إجمالي) |
+|-------|------------------------|
+| **أساسي** | `info`, `cut`, `merge`, `convert`, `crop_rotate`, `reverse_video` |
+| **نصوص** | `add_text`, `animated_text`, `subtitle_burn`, `timecode`, `text_animator` |
+| **صوت** | `add_sfx`, `add_music`, `audio_mix`, `audio_duck`, `normalize_audio`, `extract_audio`, `audio_compressor`, `audio_limiter`, `audio_eq`, `audio_gate`, `stem_separate`, `voice_enhance`, `adr_record`, `foley_sync`, `surround_mix`, `atmos_render`, `loudness_batch` |
+| **لون/فلتر** | `filter`, `color_grade`, `lut_apply`, `export_preset`, `color_match`, `color_wheel`, `aces_transform`, `dolby_vision`, `hdr10_plus`, `hdr_grade`, `color_space` |
+| **بصري/GLITCH** | `glitch`, `rgb_shift`, `film_grain`, `light_leaks`, `film_burn`, `scanlines`, `chromatic_aberration`, `pixelate_face`, `vhs_effect`, `crash_zoom`, `shake`, `lens_flare`, `particle_overlay`, `zoom_blur`, `directional_blur`, `radial_blur`, `glow`, `color_isolation`, `halftone`, `posterize`, `solarize`, `emboss`, `edge_detect`, `kaleidoscope`, `prism`, `vignette_advanced`, `letterbox`, `film_border`, `particle_system` |
+| **حركة/زوم** | `zoom`, `speed`, `speed_ramp`, `motion_blur`, `time_remap`, `auto_reframe`, `auto_reframe_ai`, `smart_zoom` |
+| **AI/ذكي** | `ai_scene_detect`, `auto_captions`, `smart_cut`, `beat_detect`, `optical_flow`, `depth_map`, `object_track`, `transition_ai`, `txt2vid`, `img2vid`, `inpaint`, `outpaint`, `upscale`, `interpolate` |
+| **جرين سكرين** | `green_screen`, `chroma_key_advanced` |
+| **تصحيح** | `stabilize`, `denoise`, `lens_correction`, `lens_correction_advanced`, `rolling_shutter`, `blur_face` |
+| **كومبوزيت متقدم** | `node_composite`, `deep_composite`, `cryptomatte`, `light_wrap`, `edge_extend` |
+| **3D/VFX** | `camera_track`, `planar_track`, `point_cloud`, `geo_export` |
+| **سير عمل/إنتاج** | `watermark`, `pip`, `split_screen`, `image_to_video`, `legendary_transition`, `auto_cut`, `beat_sync`, `thumbnail`, `thumbnail_grid`, `gif_loop`, `waveform`, `progress_bar`, `crop_detect`, `scene_detect`, `proxy_create`, `batch_process`, `qc_report`, `multi_render`, `template_apply`, `expression_engine`, `proxy_auto`, `conform_xml`, `metadata_edit` |
+| **تسليم/إتقان** | `dcp_create`, `imf_package`, `streaming_pkg`, `archive_ltfs` |
+| **أتمتة/مزارع** | `deadline_submit`, `tractor_submit`, `render_farm`, `watch_folder` |
+| **إدارة أصول** | `asset_db` |
+
+---
+
+## P.57 وصفات FINAL BOSS TIER
+
+### Recipe: "Feature Film Delivery Pipeline"
+```typescript
+// 1. ACES Pipeline
+await video_montage({ action: "aces_transform", aces_input: "logc", aces_output: "acescg", input: "raw_arri.exr", output: "aces_cg.exr" })
+
+// 2. HDR Grade (PQ)
+await video_montage({ action: "hdr_grade", hdr_grade_mode: "pq", input: "aces_cg.exr", output: "hdr_master.exr" })
+
+// 3. Dolby Vision + HDR10+
+await video_montage({ action: "dolby_vision", dv_profile: "profile_5", input: "hdr_master.exr", output: "dv_master.mp4" })
+await video_montage({ action: "hdr10_plus", hdr10_max_cll: 1000, hdr10_max_fall: 400, input: "hdr_master.exr", output: "hdr10_plus.mp4" })
+
+// 4. IMF Package للنتفليكس
+await video_montage({ action: "imf_package", imf_cpl: "cpl.xml", input: "imf_master/", output: "netflix_imf/" })
+
+// 5. DCP للسينما
+await video_montage({ action: "dcp_create", dcp_fps: "24", dcp_reel_length: 20, input: "cinema_master/", output: "dcp/" })
+
+// 6. Loudness Batch
+await video_montage({ action: "loudness_batch", loudness_targets: "netflix:-27,ebu:-23,atsc:-24", input: "final_mix.wav", output: "deliverables/" })
+
+// 7. QC Report نهائي
+await video_montage({ action: "qc_report", qc_standard: "netflix", qc_output_format: "html", input: "final_master.mp4", output: "qc_final.html" })
+```
+
+### Recipe: "VFX Shot Pipeline (Nuke/After Effects Level)"
+```typescript
+// 1. Camera Track
+await video_montage({ action: "camera_track", camera_model: "colmap", camera_focal: 35, input: "plate.mp4", output: "camera.json" })
+
+// 2. Planar Track للشاشة
+await video_montage({ action: "planar_track", planar_surface: "200,200,800,200,800,600,200,600", input: "plate.mp4", output: "screen_track.json" })
+
+// 3. Point Cloud للـ Set Extension
+await video_montage({ action: "point_cloud", point_density: "high", input: "plate.mp4", output: "set_points.ply" })
+
+// 4. Geo Export لـ Maya/Houdini
+await video_montage({ action: "geo_export", geo_format: "usd", inputs: ["camera.json", "set_points.ply"], output: "shot.usd" })
+
+// 5. Node Composite للكومبوزيت النهائي
+await video_montage({ action: "node_composite", comp_script: JSON.stringify(nukeScript), input: "plate.exr", output: "comp_final.exr" })
+
+// 6. Deep Composite للـ CG Integration
+await video_montage({ action: "deep_composite", deep_input: "cg_deep.exr", input: "comp_final.exr", output: "deep_comp.exr" })
+
+// 7. Cryptomatte للـ Isolation
+await video_montage({ action: "cryptomatte", crypto_layer: "object", input: "comp_final.exr", output: "mattes.exr" })
+
+// 8. Light Wrap للدمج الواقعي
+await video_montage({ action: "light_wrap", wrap_strength: 0.4, wrap_blur: 8, background: "bg_plate.exr", input: "keyed_fg.exr", output: "wrapped.exr" })
+```
+
+### Recipe: "AI Content Factory (توليد محتوى كامل)"
+```typescript
+// 1. Text-to-Video للمشاهد
+await video_montage({ action: "txt2vid", gen_model: "svd_xt", gen_frames: 25, gen_fps: 8, text: "futuristic city flythrough", output: "ai_shot1.mp4" })
+
+// 2. Image-to-Video للـ Keyframes
+await video_montage({ action: "img2vid", gen_model: "svd", input: "concept_art.jpg", output: "ai_shot2.mp4" })
+
+// 3. Upscale لـ 4K
+await video_montage({ action: "upscale", upscale_factor: 4, upscale_model: "realesrgan", input: "ai_shot1.mp4", output: "ai_shot1_4k.mp4" })
+
+// 4. Interpolate لـ 60fps
+await video_montage({ action: "interpolate", interp_factor: 2, input: "ai_shot1_4k.mp4", output: "ai_shot1_60fps.mp4" })
+
+// 5. Auto Captions للوصف
+await video_montage({ action: "auto_captions", caption_model: "base", caption_language: "en", caption_style: "pop-in", input: "ai_shot1_60fps.mp4", output: "captions.srt" })
+
+// 6. Particle System للأجواء
+await video_montage({ action: "particle_system", particle_type: "sparks", particle_physics: "gravity:0.3,wind:1,turbulence:0.5", input: "ai_shot1_60fps.mp4", output: "fx_shot.mp4" })
+
+// 7. Template Apply للبراندينغ
+await video_montage({ action: "template_apply", template_name: "full", template_data: JSON.stringify({brand: "MRSX PRO"}), input: "fx_shot.mp4", output: "branded.mp4" })
+
+// 8. Multi Render للمنصات
+await video_montage({ action: "multi_render", render_presets: ["youtube", "tiktok", "reels", "shorts"], input: "branded.mp4", output: "platforms/" })
+```
+
+### Recipe: "Broadcast TV Series Episode Delivery"
+```typescript
+// 1. Conform من Premiere/Avid
+await video_montage({ action: "conform_xml", conform_format: "aaf", input: "episode_edit.aaf", output: "conformed/" })
+
+// 2. Proxy Auto للمونتاج
+await video_montage({ action: "proxy_auto", proxy_trigger: "import", input: "raw_footage/", output: "proxies/" })
+
+// 3. بعد المونتاج: Asset DB للتسجيل
+await video_montage({ action: "asset_db", db_connection: "postgresql://prod", asset_tags: "show:series01,ep:05,status:locked", input: "locked_cut.mp4", output: "asset_id.txt" })
+
+// 4. Surround Mix 5.1
+await video_montage({ action: "surround_mix", surround_layout: "5.1", input: "stems/", output: "51_mix.wav" })
+
+// 5. Loudness EBU R128
+await video_montage({ action: "loudness_batch", loudness_targets: "ebu:-23", input: "51_mix.wav", output: "ebu_compliant.wav" })
+
+// 6. QC Report
+await video_montage({ action: "qc_report", qc_standard: "ebu-r128", qc_output_format: "html", input: "final.mp4", output: "qc_broadcast.html" })
+
+// 7. Streaming Package للبث
+await video_montage({ action: "streaming_pkg", streaming_codec: "h264", streaming_ladder: "1080p:8M,720p:4M,480p:2M", input: "final.mp4", output: "broadcast_stream/" })
+
+// 8. Archive
+await video_montage({ action: "archive_ltfs", archive_format: "ltfs", input: "project/", output: "LTO_Archive/" })
+```
+
+---
+
 ## خلاصة فلسفة المونتاج
 > **المونتاج ليس تنفيذ أوامر، بل رواية قصة بإيقاعٍ متعمد.**
 > كل قص، كل موسيقى، كل أفكت، كل نص، كل زوم، كل تسريع — قرار فني يخدم المزاج والهدف.

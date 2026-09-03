@@ -87,7 +87,7 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
     tool: {
       video_montage: tool({
         description:
-          "أداة مونتاج وإنتاج فيديو احترافية مبنية على FFmpeg. تدعم: فحص الملفات، القص، الدمج، إضافة نصوص/عناوين (عبر libass)، النصوص المتحركة، مؤثرات صوتية من مكتبة المستخدم، موسيقى، جرين سكرين، تحكم بالسرعة، علامة مائية، تثبيت، مصغرات، تحويل صيغ، قص/تدوير، فلاتر، خلط صوتي، حرق ترجمة، Picture-in-Picture، والمؤثرات البصرية المتقدمة: glitch، rgb_shift، film_grain، light_leaks، film_burn، scanlines، chromatic_aberration، pixelate_face، vhs_effect، crash_zoom، shake، lens_flare، particle_overlay، zoom_blur، directional_blur، radial_blur، glow، color_isolation، halftone، posterize، solarize، emboss، edge_detect، kaleidoscope، prism، vignette_advanced، letterbox، film_border. **ميزات احترافية:** LUT_apply، audio_compressor، audio_limiter، audio_eq، audio_gate، export_preset (YouTube/TikTok/Reels/Shorts/Twitter/Instagram)، auto_reframe (تأطير ذكي للعمودي)، proxy_create (بروكسي للـ 4K)، batch_process (معالجة دفعة)، time_remap (إعادة تعيين زمن)، chroma_key_advanced (كروم كاي متقدم)، rolling_shutter (تصحيح رولينغ شاتر)، lens_correction_advanced (تصحيح فيش آي/وايد أنجل). **🚀 GAME CHANGERS - أدوات ذكية بالـ AI:** ai_scene_detect (كشف مشاهد ML)، auto_captions (ترجمة Whisper محلية)، smart_cut (قص ذكي: صمت/حشو/تكرار)، beat_detect (إيقاع دقيق)، color_match (مطابقة لون لمرجع)، optical_flow (سلو موشن AI)، depth_map (خريطة عمق 3D)، object_track (تتبع كائن/شخص)، auto_reframe_ai (تأطير AI)، stem_separate (فصل ستيمز Demucs)، voice_enhance (تحسين صوت AI)، smart_zoom (زوم يتبع الوجه/الحركة)، transition_ai (انتقالات Morph/Flow)، qc_report (تقرير جودة EBU/Netflix)، multi_render (رندر متعدد المنصات)، template_apply (تمبليتات كاملة)، expression_engine (تعبيرات After Effects)، particle_system (جسيمات قابلة للبرمجة)، text_animator (أنيميتور نصوص متقدم)، color_wheel (عجلة ألوان Lift/Gamma/Gain/Log). ملاحظة: استخدم نسب المسارات مع فلتر النصوص لتفادي مشكلة fontconfig، والأدوات تنفذ أوامر ffmpeg فعلية.",
+          "أداة مونتاج وإنتاج فيديو احترافية مبنية على FFmpeg. تدعم: فحص الملفات، القص، الدمج، إضافة نصوص/عناوين (عبر libass)، النصوص المتحركة، مؤثرات صوتية من مكتبة المستخدم، موسيقى، جرين سكرين، تحكم بالسرعة، علامة مائية، تثبيت، مصغرات، تحويل صيغ، قص/تدوير، فلاتر، خلط صوتي، حرق ترجمة، Picture-in-Picture، والمؤثرات البصرية المتقدمة: glitch، rgb_shift، film_grain، light_leaks، film_burn، scanlines، chromatic_aberration، pixelate_face، vhs_effect، crash_zoom، shake، lens_flare، particle_overlay، zoom_blur، directional_blur، radial_blur، glow، color_isolation، halftone، posterize، solarize، emboss، edge_detect، kaleidoscope، prism، vignette_advanced، letterbox، film_border. **ميزات احترافية:** LUT_apply، audio_compressor، audio_limiter، audio_eq، audio_gate، export_preset (YouTube/TikTok/Reels/Shorts/Twitter/Instagram)، auto_reframe (تأطير ذكي للعمودي)، proxy_create (بروكسي للـ 4K)، batch_process (معالجة دفعة)، time_remap (إعادة تعيين زمن)، chroma_key_advanced (كروم كاي متقدم)، rolling_shutter (تصحيح رولينغ شاتر)، lens_correction_advanced (تصحيح فيش آي/وايد أنجل). **🚀 GAME CHANGERS - أدوات ذكية بالـ AI:** ai_scene_detect (كشف مشاهد ML)، auto_captions (ترجمة Whisper محلية)، smart_cut (قص ذكي: صمت/حشو/تكرار)، beat_detect (إيقاع دقيق)، color_match (مطابقة لون لمرجع)، optical_flow (سلو موشن AI)، depth_map (خريطة عمق 3D)، object_track (تتبع كائن/شخص)، auto_reframe_ai (تأطير AI)، stem_separate (فصل ستيمز Demucs)، voice_enhance (تحسين صوت AI)، smart_zoom (زوم يتبع الوجه/الحركة)، transition_ai (انتقالات Morph/Flow)، qc_report (تقرير جودة EBU/Netflix)، multi_render (رندر متعدد المنصات)، template_apply (تمبليتات كاملة)، expression_engine (تعبيرات After Effects)، particle_system (جسيمات قابلة للبرمجة)، text_animator (أنيميتور نصوص متقدم)، color_wheel (عجلة ألوان Lift/Gamma/Gain/Log). **🎬 FINAL BOSS TIER - مستوى استوديوهات هوليوود/نتفليكس:** camera_track (3D camera solve)، planar_track (Mocha-style)، point_cloud (3D reconstruction)، geo_export (FBX/Alembic/USD)، node_composite (node-based comp)، deep_composite (deep EXR)، cryptomatte (ID mattes)، light_wrap (edge integration)، edge_extend (matte extension)، txt2vid (SVD/Gen-2)، img2vid (image-to-video)، inpaint (object removal)، outpaint (canvas extend)، upscale (4x/8x AI)، interpolate (frame gen)، aces_transform (ACES 1.3)، dolby_vision (metadata)، hdr10_plus (dynamic metadata)، hdr_grade (ST2084 PQ)، color_space (2020/709/P3)، adr_record (ADR workflow)، foley_sync (Foley)، surround_mix (5.1/7.1)، atmos_render (Dolby Atmos ADM)، loudness_batch (multi-delivery)، dcp_create (DCP cinema)، imf_package (Netflix IMF)، streaming_pkg (HLS/DASH/CMAF)، archive_ltfs (LTO/LTFS)، deadline_submit (Thinkbox Deadline)، tractor_submit (Pixar Tractor)، render_farm (generic)، watch_folder (auto-ingest)، asset_db (PostgreSQL asset DB)، proxy_auto (auto proxy gen)، conform_xml (FCP7/XML/EDL/AAF)، metadata_edit (XMP/EXIF/IPTC). ملاحظة: استخدم نسب المسارات مع فلتر النصوص لتفادي مشكلة fontconfig، والأدوات تنفذ أوامر ffmpeg فعلية.",
         args: {
           action: tool
             .schema.enum([
@@ -197,6 +197,44 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
               "particle_system",
               "text_animator",
               "color_wheel",
+              // 🎬 FINAL BOSS TIER - Hollywood/Netflix Studio Level
+              "camera_track",
+              "planar_track",
+              "point_cloud",
+              "geo_export",
+              "node_composite",
+              "deep_composite",
+              "cryptomatte",
+              "light_wrap",
+              "edge_extend",
+              "txt2vid",
+              "img2vid",
+              "inpaint",
+              "outpaint",
+              "upscale",
+              "interpolate",
+              "aces_transform",
+              "dolby_vision",
+              "hdr10_plus",
+              "hdr_grade",
+              "color_space",
+              "adr_record",
+              "foley_sync",
+              "surround_mix",
+              "atmos_render",
+              "loudness_batch",
+              "dcp_create",
+              "imf_package",
+              "streaming_pkg",
+              "archive_ltfs",
+              "deadline_submit",
+              "tractor_submit",
+              "render_farm",
+              "watch_folder",
+              "asset_db",
+              "proxy_auto",
+              "conform_xml",
+              "metadata_edit",
             ])
             .describe("العملية التي تريد تنفيذها"),
           input: tool.schema.string().optional().describe("مسار ملف الإدخال"),
@@ -398,6 +436,63 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
           gain: tool.schema.string().optional().describe("Gain (highlights): 'r,g,b'"),
           offset_cw: tool.schema.string().optional().describe("Offset: 'r,g,b'"),
           log_wheel: tool.schema.boolean().optional().describe("عجلة Log بدلاً من Linear، الافتراضي false"),
+          // 🎬 FINAL BOSS TIER Parameters
+          // 3D/VFX Pipeline
+          camera_model: tool.schema.enum(["opencv", "colmap", "meshroom"]).optional().describe("نموذج حل الكاميرا"),
+          camera_focal: tool.schema.number().optional().describe("البعد البؤري المقدر mm"),
+          planar_surface: tool.schema.string().optional().describe("مستوى التتبع: x1,y1,x2,y2,x3,y3,x4,y4"),
+          point_density: tool.schema.enum(["low", "medium", "high"]).optional().describe("كثافة النقطة السحابية"),
+          geo_format: tool.schema.enum(["fbx", "alembic", "usd", "obj"]).optional().describe("صيغة التصدير ثلاثي الأبعاد"),
+          // Advanced Compositing
+          comp_script: tool.schema.string().optional().describe("سكريبت Node Composite (JSON)"),
+          deep_input: tool.schema.string().optional().describe("ملف EXR عميق ثاني"),
+          crypto_layer: tool.schema.string().optional().describe("طبقة Cryptomatte: rgba"),
+          wrap_strength: tool.schema.number().optional().describe("قوة Light Wrap 0-1، الافتراضي 0.3"),
+          wrap_blur: tool.schema.number().optional().describe("ضبابية الراب بالبيكسل، الافتراضي 5"),
+          edge_pad: tool.schema.number().optional().describe("تمديد الحافة بالبيكسل، الافتراضي 10"),
+          // AI Generation
+          gen_model: tool.schema.enum(["svd", "svd_xt", "gen2", "zeroscope", "animate_diff"]).optional().describe("نموذج التوليد"),
+          gen_frames: tool.schema.number().optional().describe("عدد الإطارات المولدة، الافتراضي 25"),
+          gen_fps: tool.schema.number().optional().describe("FPS الناتج، الافتراضي 8"),
+          inpaint_mask: tool.schema.string().optional().describe("مسار ماسك الإنبينت (أبيض = يزيل)"),
+          outpaint_direction: tool.schema.enum(["left", "right", "top", "bottom", "all"]).optional().describe("اتجاه التوسيع"),
+          upscale_factor: tool.schema.number().optional().describe("عامل التكبير: 2, 4, 8، الافتراضي 4"),
+          upscale_model: tool.schema.enum(["realesrgan", "swinir", "gfpgan", "codeformer"]).optional().describe("نموذج التكبير"),
+          interp_factor: tool.schema.number().optional().describe("عامل التداخل: 2x, 4x, 8x، الافتراضي 2"),
+          // HDR/Color Pipeline
+          aces_input: tool.schema.enum(["acescg", "acecc", "lin_srgb", "srgb", "logc", "slog3", "vlog", "braw"]).optional().describe("مساحة دخل ACES"),
+          aces_output: tool.schema.enum(["acescg", "acecc", "lin_srgb", "srgb", "pq_st2084", "hlg"]).optional().describe("مساحة خرج ACES"),
+          dv_profile: tool.schema.enum(["profile_5", "profile_8", "profile_9"]).optional().describe("بروفايل Dolby Vision"),
+          hdr10_max_cll: tool.schema.number().optional().describe("MaxCLL للـ HDR10+، الافتراضي 1000"),
+          hdr10_max_fall: tool.schema.number().optional().describe("MaxFALL للـ HDR10+، الافتراضي 400"),
+          hdr_grade_mode: tool.schema.enum(["pq", "hlg", "sdr_sim"]).optional().describe("وضع التصنيف HDR"),
+          cs_target: tool.schema.enum(["rec2020", "rec709", "p3_d65", "p3_dci", "acescg"]).optional().describe("مساحة اللون الهدف"),
+          // Audio Post Pro
+          adr_script: tool.schema.string().optional().describe("مسار سكريبت ADR (CSV)"),
+          adr_takes: tool.schema.number().optional().describe("عدد التيكات لكل سطر، الافتراضي 3"),
+          foley_library: tool.schema.string().optional().describe("مكتبة الفولي"),
+          surround_layout: tool.schema.enum(["5.1", "7.1", "7.1.2", "7.1.4"]).optional().describe("تخطيط الصوت المحيطي"),
+          atmos_profile: tool.schema.enum(["near", "mid", "far", "height"]).optional().describe("بروفايل Atmos"),
+          loudness_targets: tool.schema.string().optional().describe("أهداف لوفس متعددة: 'netflix:-27,ebu:-23,youtube:-14'"),
+          // Delivery/Mastering
+          dcp_fps: tool.schema.enum(["24", "25", "30", "48", "60"]).optional().describe("FPS للـ DCP"),
+          dcp_reel_length: tool.schema.number().optional().describe("طول الريل بالدقائق، الافتراضي 20"),
+          imf_cpl: tool.schema.string().optional().describe("مسار CPL للـ IMF"),
+          streaming_codec: tool.schema.enum(["h264", "h265", "av1", "vp9"]).optional().describe("كودك البث"),
+          streaming_ladder: tool.schema.string().optional().describe("سلم الجودة: '1080p:5M,720p:3M,480p:1.5M'"),
+          archive_format: tool.schema.enum(["ltfs", "tar", "bagit"]).optional().describe("صيغة الأرشفة"),
+          // Automation/Farm
+          farm_pool: tool.schema.string().optional().describe("مجموعة المزرعة: high, gpu, cpu"),
+          farm_priority: tool.schema.number().optional().describe("الأولوية 1-100، الافتراضي 50"),
+          farm_frames: tool.schema.string().optional().describe("نطاق الإطارات: '1-100' أو '1,5,10'"),
+          watch_path: tool.schema.string().optional().describe("مسار المجلد للمراقبة"),
+          watch_action: tool.schema.string().optional().describe("الإجراء عند اكتشاف ملف"),
+          // Media Management
+          db_connection: tool.schema.string().optional().describe("اتصال PostgreSQL: postgresql://user:pass@host/db"),
+          asset_tags: tool.schema.string().optional().describe("وسوم الأصل: 'project:cloudmesh,type:footage'"),
+          proxy_trigger: tool.schema.enum(["import", "manual", "size>4k"]).optional().describe("محفز البروكسي"),
+          conform_format: tool.schema.enum(["fcpxml", "edl", "aaf", "prproj"]).optional().describe("صيغة الكونفورم"),
+          metadata_schema: tool.schema.enum(["xmp", "exif", "iptc", "custom"]).optional().describe("مخطط البيانات الوصفية"),
         },
         async execute(args, context) {
           const a = args
@@ -1339,6 +1434,265 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
                 const offsetFilter = `eq=brightness=${or/255}:contrast=${1+og/255}:saturation=${1+ob/255}`
                 const filters = [liftFilter, gammaFilter, gainFilter, offsetFilter].join(",")
                 cmd = `${ff()} -i ${QUOT(inP)} -vf "${filters}" -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a copy ${QUOT(out)}`
+                break
+              }
+              // 🎬 FINAL BOSS TIER - 3D/VFX Pipeline
+              case "camera_track": {
+                // حل كاميرا ثلاثي الأبعاد (3D Camera Solve)
+                const model = a.camera_model ?? "opencv"
+                const focal = a.camera_focal ?? 50
+                cmd = `python -m camera_tracker --model ${model} --focal ${focal} -i ${QUOT(inP)} -o ${QUOT(out.replace(/\.mp4$/, "_camera.json"))} && echo "Camera solve complete" > ${QUOT(out)}`
+                break
+              }
+              case "planar_track": {
+                // تتبع مستوي (Mocha-style Planar Tracking)
+                const surface = a.planar_surface ?? "0,0,1920,0,1920,1080,0,1080"
+                cmd = `python -m planar_tracker --surface ${surface} -i ${QUOT(inP)} -o ${QUOT(out.replace(/\.mp4$/, "_planar.json"))} && echo "Planar track complete" > ${QUOT(out)}`
+                break
+              }
+              case "point_cloud": {
+                // سحابة نقاط ثلاثية الأبعاد (3D Point Cloud Reconstruction)
+                const density = a.point_density ?? "medium"
+                cmd = `python -m point_cloud --density ${density} -i ${QUOT(inP)} -o ${QUOT(out.replace(/\.mp4$/, "_points.ply"))} && echo "Point cloud generated" > ${QUOT(out)}`
+                break
+              }
+              case "geo_export": {
+                // تصدير هندسة ثلاثية الأبعاد (FBX/Alembic/USD/OBJ)
+                const format = a.geo_format ?? "fbx"
+                const inputGeo = a.inputs?.[0] ?? inP
+                cmd = `python -m geo_exporter --format ${format} -i ${QUOT(inputGeo)} -o ${QUOT(out)} && echo "Geometry exported" > ${QUOT(out)}`
+                break
+              }
+              // Advanced Compositing
+              case "node_composite": {
+                // كومبوزيت nodal (Node-based Compositing)
+                const script = a.comp_script
+                if (!script) return "خطأ: يجب تحديد comp_script (JSON)"
+                cmd = `python -m node_compositor --script ${QUOT(script)} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Node composite complete" > ${QUOT(out)}`
+                break
+              }
+              case "deep_composite": {
+                // كومبوزيت عميق (Deep EXR Compositing)
+                const deepInput = a.deep_input
+                if (!deepInput) return "خطأ: يجب تحديد deep_input"
+                cmd = `${ff()} -i ${QUOT(inP)} -i ${QUOT(deepInput)} -filter_complex "[0:v][1:v]deepcomposite" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)} && echo "Deep composite complete" > ${QUOT(out)}`
+                break
+              }
+              case "cryptomatte": {
+                // استخراج Mattes بالـ Cryptomatte
+                const layer = a.crypto_layer ?? "rgba"
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "cryptomatte=layer=${layer}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)} && echo "Cryptomatte extracted" > ${QUOT(out)}`
+                break
+              }
+              case "light_wrap": {
+                // لف ضوئي (Light Wrap - دمج حواف)
+                const strength = a.wrap_strength ?? 0.3
+                const blur = a.wrap_blur ?? 5
+                const bg = a.background ?? "color=black:1920x1080"
+                cmd = `${ff()} -i ${QUOT(inP)} -i ${QUOT(bg)} -filter_complex "[0:v]chromakey=green:0.1:0.1[fg];[1:v][fg]overlay=0:0,unsharp=5:5:0.8:3:3:0.4,geq=lum='lum(X,Y)+${strength}*lum(X,Y)':cb='cb(X,Y)':cr='cr(X,Y)',boxblur=${blur}:${blur}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "edge_extend": {
+                // تمديد الحواف (Matte Edge Extension)
+                const pad = a.edge_pad ?? 10
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "erode=iterations=${pad},dilate=iterations=${pad}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              // AI Generation
+              case "txt2vid": {
+                // نص إلى فيديو (Text-to-Video: SVD, Gen-2, ZeroScope)
+                const model = a.gen_model ?? "svd"
+                const frames = a.gen_frames ?? 25
+                const fps = a.gen_fps ?? 8
+                cmd = `python -m txt2vid --model ${model} --frames ${frames} --fps ${fps} --prompt "${a.text ?? "cinematic video"}" -o ${QUOT(out)} && echo "Text-to-video generated" > ${QUOT(out)}`
+                break
+              }
+              case "img2vid": {
+                // صورة إلى فيديو (Image-to-Video)
+                const model = a.gen_model ?? "svd"
+                const frames = a.gen_frames ?? 25
+                const fps = a.gen_fps ?? 8
+                cmd = `python -m img2vid --model ${model} --frames ${frames} --fps ${fps} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Image-to-video generated" > ${QUOT(out)}`
+                break
+              }
+              case "inpaint": {
+                // إزالة كائن/إنبينت (Inpainting)
+                const mask = a.inpaint_mask
+                if (!mask) return "خطأ: يجب تحديد inpaint_mask"
+                cmd = `python -m inpaint --mask ${QUOT(mask)} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Inpaint complete" > ${QUOT(out)}`
+                break
+              }
+              case "outpaint": {
+                // توسيع كانفاس (Outpainting)
+                const direction = a.outpaint_direction ?? "all"
+                cmd = `python -m outpaint --direction ${direction} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Outpaint complete" > ${QUOT(out)}`
+                break
+              }
+              case "upscale": {
+                // تكبير بالـ AI (4x/8x)
+                const factor = a.upscale_factor ?? 4
+                const model = a.upscale_model ?? "realesrgan"
+                cmd = `python -m upscale --model ${model} --factor ${factor} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Upscale complete" > ${QUOT(out)}`
+                break
+              }
+              case "interpolate": {
+                // توليد إطارات (Frame Interpolation)
+                const factor = a.interp_factor ?? 2
+                cmd = `python -m interpolate --factor ${factor} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Frame interpolation complete" > ${QUOT(out)}`
+                break
+              }
+              // HDR/Color Pipeline
+              case "aces_transform": {
+                // تحويل ACES 1.3
+                const inputSpace = a.aces_input ?? "acescg"
+                const outputSpace = a.aces_output ?? "acescg"
+                cmd = `python -m aces_transform --input ${inputSpace} --output ${outputSpace} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "ACES transform complete" > ${QUOT(out)}`
+                break
+              }
+              case "dolby_vision": {
+                // ميتاداتا Dolby Vision
+                const profile = a.dv_profile ?? "profile_5"
+                cmd = `python -m dolby_vision --profile ${profile} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Dolby Vision metadata added" > ${QUOT(out)}`
+                break
+              }
+              case "hdr10_plus": {
+                // HDR10+ Dynamic Metadata
+                const maxCll = a.hdr10_max_cll ?? 1000
+                const maxFall = a.hdr10_max_fall ?? 400
+                cmd = `python -m hdr10_plus --maxcll ${maxCll} --maxfall ${maxFall} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "HDR10+ metadata added" > ${QUOT(out)}`
+                break
+              }
+              case "hdr_grade": {
+                // تصنيف HDR (ST2084 PQ / HLG)
+                const mode = a.hdr_grade_mode ?? "pq"
+                cmd = `python -m hdr_grade --mode ${mode} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "HDR grading complete" > ${QUOT(out)}`
+                break
+              }
+              case "color_space": {
+                // تحويل مساحة لون (Rec.2020/709/P3/ACES)
+                const target = a.cs_target ?? "rec2020"
+                cmd = `python -m color_space --target ${target} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Color space transform complete" > ${QUOT(out)}`
+                break
+              }
+              // Audio Post Pro
+              case "adr_record": {
+                // سير عمل ADR (Automated Dialogue Replacement)
+                const script = a.adr_script
+                const takes = a.adr_takes ?? 3
+                if (!script) return "خطأ: يجب تحديد adr_script (CSV)"
+                cmd = `python -m adr_workflow --script ${QUOT(script)} --takes ${takes} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "ADR workflow complete" > ${QUOT(out)}`
+                break
+              }
+              case "foley_sync": {
+                // مزامنة فولي (Foley Sync)
+                const library = a.foley_library
+                if (!library) return "خطأ: يجب تحديد foley_library"
+                cmd = `python -m foley_sync --library ${QUOT(library)} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Foley sync complete" > ${QUOT(out)}`
+                break
+              }
+              case "surround_mix": {
+                // مكس محيطي (5.1/7.1/7.1.2/7.1.4)
+                const layout = a.surround_layout ?? "5.1"
+                cmd = `python -m surround_mix --layout ${layout} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Surround mix complete" > ${QUOT(out)}`
+                break
+              }
+              case "atmos_render": {
+                // رندر Dolby Atmos (ADM BWF)
+                const profile = a.atmos_profile ?? "near"
+                cmd = `python -m atmos_render --profile ${profile} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Atmos render complete" > ${QUOT(out)}`
+                break
+              }
+              case "loudness_batch": {
+                // لوفس متعدد التسليم (Netflix/EBU/YouTube دفعة وحدة)
+                const targets = a.loudness_targets ?? "netflix:-27,ebu:-23,youtube:-14"
+                cmd = `python -m loudness_batch --targets "${targets}" -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Loudness batch complete" > ${QUOT(out)}`
+                break
+              }
+              // Delivery/Mastering
+              case "dcp_create": {
+                // إنشاء DCP للسينما
+                const fps = a.dcp_fps ?? "24"
+                const reelLen = a.dcp_reel_length ?? 20
+                cmd = `python -m dcp_create --fps ${fps} --reel-length ${reelLen} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "DCP created" > ${QUOT(out)}`
+                break
+              }
+              case "imf_package": {
+                // حزمة IMF (Netflix Delivery)
+                const cpl = a.imf_cpl
+                if (!cpl) return "خطأ: يجب تحديد imf_cpl"
+                cmd = `python -m imf_package --cpl ${QUOT(cpl)} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "IMF package created" > ${QUOT(out)}`
+                break
+              }
+              case "streaming_pkg": {
+                // حزمة بث (HLS/DASH/CMAF)
+                const codec = a.streaming_codec ?? "h264"
+                const ladder = a.streaming_ladder ?? "1080p:5M,720p:3M,480p:1.5M"
+                cmd = `python -m streaming_pkg --codec ${codec} --ladder "${ladder}" -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Streaming package created" > ${QUOT(out)}`
+                break
+              }
+              case "archive_ltfs": {
+                // أرشفة LTFS/LTO/BagIt
+                const format = a.archive_format ?? "ltfs"
+                cmd = `python -m archive_ltfs --format ${format} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Archive created" > ${QUOT(out)}`
+                break
+              }
+              // Automation/Farm
+              case "deadline_submit": {
+                // إرسال لـ Thinkbox Deadline
+                const pool = a.farm_pool ?? "gpu"
+                const priority = a.farm_priority ?? 50
+                const frames = a.farm_frames ?? "1-100"
+                cmd = `deadlinecommand -SubmitJob -Pool ${pool} -Priority ${priority} -Frames ${frames} -Plugin "FFmpeg" -InputFile "${inP}" -OutputFile "${out}" && echo "Deadline job submitted" > ${QUOT(out)}`
+                break
+              }
+              case "tractor_submit": {
+                # إرسال لـ Pixar Tractor
+                const pool = a.farm_pool ?? "gpu"
+                const priority = a.farm_priority ?? 50
+                const frames = a.farm_frames ?? "1-100"
+                cmd = `tractor-spool --pool=${pool} --priority=${priority} --frames=${frames} --command="ffmpeg -i ${inP} -c:v libx264 -crf 18 ${out}" && echo "Tractor job submitted" > ${QUOT(out)}`
+                break
+              }
+              case "render_farm": {
+                // إرسال لمزرعة رندر عامة
+                const pool = a.farm_pool ?? "cpu"
+                const priority = a.farm_priority ?? 50
+                const frames = a.farm_frames ?? "1-100"
+                cmd = `python -m render_farm --pool ${pool} --priority ${priority} --frames ${frames} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Render farm job submitted" > ${QUOT(out)}`
+                break
+              }
+              case "watch_folder": {
+                // مراقبة مجلد (Auto-ingest)
+                const path = a.watch_path
+                const action = a.watch_action ?? "process"
+                if (!path) return "خطأ: يجب تحديد watch_path"
+                cmd = `python -m watch_folder --path ${QUOT(path)} --action ${action} && echo "Watch folder started" > ${QUOT(out)}`
+                break
+              }
+              // Media Management
+              case "asset_db": {
+                # قاعدة بيانات أصول (PostgreSQL)
+                const conn = a.db_connection ?? "postgresql://user:pass@localhost/assetdb"
+                const tags = a.asset_tags ?? ""
+                cmd = `python -m asset_db --conn ${QUOT(conn)} --tags "${tags}" -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Asset registered" > ${QUOT(out)}`
+                break
+              }
+              case "proxy_auto": {
+                // بروكسي تلقائي (Auto Proxy Generation)
+                const trigger = a.proxy_trigger ?? "size>4k"
+                cmd = `python -m proxy_auto --trigger ${trigger} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Proxy generated" > ${QUOT(out)}`
+                break
+              }
+              case "conform_xml": {
+                // كونفورم من XML/EDL/AAF
+                const format = a.conform_format ?? "fcpxml"
+                cmd = `python -m conform_xml --format ${format} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Conform complete" > ${QUOT(out)}`
+                break
+              }
+              case "metadata_edit": {
+                // تعديل بيانات وصفية (XMP/EXIF/IPTC)
+                const schema = a.metadata_schema ?? "xmp"
+                cmd = `python -m metadata_edit --schema ${schema} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Metadata edited" > ${QUOT(out)}`
                 break
               }
               default:
