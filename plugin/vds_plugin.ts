@@ -1,339 +1,384 @@
-// VDS (Virtual Data Space) Plugin - Integrated with Video Editor
-// Human-readable JSON storage in Documents/Virtual Data Space/
+// VDS Plugin for OpenCode - Main Plugin with Tools
+// Provides: vds_init, vds_write, vds_read, vds_list, vds_delete, vds_export, vds_import, vds_reset
 
-import * as fs from 'fs';
-import * as path from 'path';
+import { type Plugin, tool } from "@opencode-ai/plugin";
 import { 
-  VDSData, VDSIdentity, VDSPreferences, VDSMemory, VDSSessions, VDSConsent,
-  VDS_FILES, VDS_SCHEMA_VERSION, VDS_VERSION, DEFAULT_CONSENT,
-  VDSMemoryEntry, VDSSession, VDSFileName
-} from './vds_types.js';
+  getVDSManager, 
+  VDSFormat, 
+  VDSData, 
+  VDSGeneralData, 
+  VDSUserData, 
+  VDSSystemData,
+  VDSEncryption,
+  DEFAULT_ENCRYPTION_CONFIG,
+  EncryptedData
+} from "./vds_core.js";
 
-const VDS_DIR = path.join(process.env.USERPROFILE || '', 'Documents', 'Virtual Data Space');
+// Default encryption key (empty for repo - user sets their own)
+const DEFAULT_MASTER_KEY = ""; // SET YOUR KEY HERE
 
-export class VDSPlugin {
-  private data: VDSData;
-  private initialized = false;
+// Initialize VDS Manager
+const vds = getVDSManager(DEFAULT_MASTER_KEY);
 
-  constructor() {
-    this.data = this.getEmptyData();
-  }
+export const VDSPlugin: Plugin = async ({ $, directory }) => {
+  // Initialize on load
+  await vds.initialize();
+  console.log('[VDS Plugin] Initialized at:', vds.getVDSPath());
 
-  private getEmptyData(): VDSData {
-    return {
-      consent: { ...DEFAULT_CONSENT },
-      version: VDS_VERSION,
-      schema_version: VDS_SCHEMA_VERSION
-    };
-  }
-
-  // Initialize VDS - creates directory and loads data
-  async initialize(): Promise<boolean> {
-    if (this.initialized) return true;
-
-    try {
-      // Create directory if not exists
-      if (!fs.existsSync(VDS_DIR)) {
-        fs.mkdirSync(VDS_DIR, { recursive: true });
-        console.log(`[VDS] Created directory: ${VDS_DIR}`);
-      }
-
-      // Load existing data
-      await this.loadAll();
-
-      this.initialized = true;
-      return true;
-    } catch (error) {
-      console.error('[VDS] Initialization failed:', error);
-      return false;
-    }
-  }
-
-  // Load all VDS files
-  private async loadAll(): Promise<void> {
-    for (const [key, filename] of Object.entries(VDS_FILES)) {
-      const filePath = path.join(VDS_DIR, filename);
-      if (fs.existsSync(filePath)) {
-        try {
-          const content = fs.readFileSync(filePath, 'utf-8');
-          const parsed = JSON.parse(content);
-          (this.data as any)[key] = parsed;
-        } catch (e) {
-          console.warn(`[VDS] Failed to load ${filename}:`, e);
+  return {
+    tool: {
+      // ============================================
+      // VDS INIT - Initialize VDS directory and files
+      // ============================================
+      vds_init: tool({
+        description: "تهيئة نظام VDS - إنشاء مجلد Documents/Virtual Data Space/ وملفات .vds, .vdsu, .vdss",
+        args: {
+          master_key: tool.schema.string().optional().describe("مفتاح التشفير للملف .vdss (فارغ = لا تشفير)"),
+          force: tool.schema.boolean().optional().describe("إعادة التهيئة حتى لو موجود"),
+        },
+        async execute(args) {
+          const { master_key, force } = args;
+          
+          if (master_key) {
+            vds.setEncryptionKey(master_key);
+          }
+          
+          if (force) {
+            vds.resetAll();
+          }
+          
+          const success = await vds.initialize();
+          const files = vds.listFiles();
+          
+          return `### VDS Initialized ${success ? '✅' : '❌'}\n` +
+            `المسار: \`${vds.getVDSPath()}\`\n` +
+            `التشفير: ${vds.hasEncryption() ? 'مفعل 🔐' : 'معطل 🔓'}\n` +
+            `الملفات:\n` +
+            files.map(f => `- ${f.format}: ${f.exists ? 'موجود ✅' : 'غير موجود ❌'} (${f.path})`).join('\n');
         }
+      }),
+
+      // ============================================
+      // VDS WRITE - Write data to a specific format
+      // ============================================
+      vds_write: tool({
+        description: "كتابة بيانات لملف VDS محدد (.vds, .vdsu, .vdss)",
+        args: {
+          format: tool.schema.enum(['vds', 'vdsu', 'vdss']).describe("نوع الملف: vds (عام), vdsu (يوزر), vdss (نظام مشفر)"),
+          data: tool.schema.string().describe("البيانات كـ JSON string"),
+          merge: tool.schema.boolean().optional().describe("دمج مع البيانات الموجودة (true) أو استبدال (false, افتراضي)"),
+        },
+        async execute(args) {
+          const { format, data, merge } = args;
+          
+          let parsed: any;
+          try {
+            parsed = JSON.parse(data);
+          } catch (e) {
+            return `❌ JSON غير صالح: ${e}`;
+          }
+
+          // Validate format-specific structure
+          const validation = validateData(format, parsed);
+          if (!validation.valid) {
+            return `❌ هيكل البيانات غير صحيح لـ .${format}:\n${validation.errors.join('\n')}`;
+          }
+
+          let finalData = parsed;
+          
+          if (merge) {
+            const existing = vds.read(format);
+            if (existing) {
+              finalData = deepMerge(existing, parsed);
+            }
+          }
+
+          const success = vds.write(format, finalData);
+          const fileInfo = vds.getFileInfo(format as VDSFormat);
+          
+          return `### VDS Write ${success ? '✅' : '❌'}\n` +
+            `الملف: \`${format}\`\n` +
+            `المسار: \`${fileInfo.path}\`\n` +
+            `الحجم: ${fileInfo.size ? (fileInfo.size / 1024).toFixed(2) + ' KB' : '0 KB'}\n` +
+            `مُشفر: ${fileInfo.encrypted ? 'نعم 🔐' : 'لا 🔓'}`;
+        }
+      }),
+
+      // ============================================
+      // VDS READ - Read data from a specific format
+      // ============================================
+      vds_read: tool({
+        description: "قراءة بيانات من ملف VDS محدد",
+        args: {
+          format: tool.schema.enum(['vds', 'vdsu', 'vdss']).describe("نوع الملف"),
+          pretty: tool.schema.boolean().optional().describe("تنسيق JSON بشكل مقروء (افتراضي: true)"),
+        },
+        async execute(args) {
+          const { format, pretty } = args;
+          
+          const data = vds.read(format as VDSFormat);
+          
+          if (!data) {
+            return `❌ ملف .${format} غير موجود أو فارغ\nالمسار المتوقع: \`${vds.getFileInfo(format as VDSFormat).path}\``;
+          }
+
+          const output = pretty !== false ? JSON.stringify(data, null, 2) : JSON.stringify(data);
+          
+          return `### VDS Read (.${format}) ✅\n` +
+            `المسار: \`${vds.getFileInfo(format as VDSFormat).path}\`\n` +
+            `\`\`\`json\n${output}\n\`\`\``;
+        }
+      }),
+
+      // ============================================
+      // VDS LIST - List all VDS files
+      // ============================================
+      vds_list: tool({
+        description: "عرض جميع ملفات VDS وحالتها",
+        args: {},
+        async execute() {
+          const files = vds.listFiles();
+          const hasEncryption = vds.hasEncryption();
+          
+          return `### VDS Files List\n` +
+            `المجلد: \`${vds.getVDSPath()}\`\n` +
+            `التشفير: ${hasEncryption ? 'مفعل 🔐' : 'معطل 🔓'}\n\n` +
+            files.map(f => 
+              `**${f.format.toUpperCase()}** ${f.exists ? '✅' : '❌'}\n` +
+              `  المسار: \`${f.path}\`\n` +
+              `  الحجم: ${f.size ? (f.size / 1024).toFixed(2) + ' KB' : '0 KB'}\n` +
+              `  معدل: ${f.modified ? f.modified.toLocaleString() : '—'}\n` +
+              `  مُشفر: ${f.encrypted ? 'نعم 🔐' : 'لا 🔓'}`
+            ).join('\n\n');
+        }
+      }),
+
+      // ============================================
+      // VDS DELETE - Delete a specific VDS file
+      // ============================================
+      vds_delete: tool({
+        description: "حذف ملف VDS محدد",
+        args: {
+          format: tool.schema.enum(['vds', 'vdsu', 'vdss']).describe("نوع الملف للحذف"),
+          confirm: tool.schema.boolean().describe("تأكيد الحذف (مطلوب: true)"),
+        },
+        async execute(args) {
+          const { format, confirm } = args;
+          
+          if (!confirm) {
+            return `⚠️ يتطلب تأكيد: أضف confirm=true`;
+          }
+          
+          const success = vds.delete(format as VDSFormat);
+          
+          return `### VDS Delete ${success ? '✅' : '❌'}\n` +
+            `الملف: .${format}\n` +
+            `${success ? 'تم الحذف' : 'الملف غير موجود'}`;
+        }
+      }),
+
+      // ============================================
+      // VDS EXPORT - Export all data (decrypted)
+      // ============================================
+      vds_export: tool({
+        description: "تصدير جميع بيانات VDS لملف JSON (مفكك التشفير للنسخ الاحتياطي)",
+        args: {
+          output: tool.schema.string().optional().describe("مسار ملف الإخراج (افتراضي: vds_backup_<timestamp>.json)"),
+        },
+        async execute(args) {
+          const { output } = args;
+          const outPath = output || path.join(vds.getVDSPath(), `vds_backup_${Date.now()}.json`);
+          
+          const success = vds.exportAll(outPath);
+          
+          return `### VDS Export ${success ? '✅' : '❌'}\n` +
+            `الملف: \`${outPath}\`\n` +
+            `${success ? 'تم التصدير (البيانات مفككة التشفير)' : 'فشل'}`;
+        }
+      }),
+
+      // ============================================
+      // VDS IMPORT - Import data from JSON
+      // ============================================
+      vds_import: tool({
+        description: "استيراد بيانات VDS من ملف JSON",
+        args: {
+          input: tool.schema.string().describe("مسار ملف JSON للاستيراد"),
+        },
+        async execute(args) {
+          const { input } = args;
+          
+          if (!fs.existsSync(input)) {
+            return `❌ ملف غير موجود: ${input}`;
+          }
+          
+          const success = vds.importAll(input);
+          
+          return `### VDS Import ${success ? '✅' : '❌'}\n` +
+            `المصدر: \`${input}\`\n` +
+            `${success ? 'تم الاستيراد' : 'فشل'}`;
+        }
+      }),
+
+      // ============================================
+      // VDS RESET - Reset all VDS data
+      // ============================================
+      vds_reset: tool({
+        description: "مسح جميع بيانات VDS (يتطلب تأكيد)",
+        args: {
+          confirm: tool.schema.boolean().describe("تأكيد المسح الكامل (مطلوب: true)"),
+          keep_structure: tool.schema.boolean().optional().describe("الاحتفاظ بهيكل المجلد (افتراضي: true)"),
+        },
+        async execute(args) {
+          const { confirm, keep_structure } = args;
+          
+          if (!confirm) {
+            return `⚠️ يتطلب تأكيد: أضف confirm=true`;
+          }
+          
+          const success = vds.resetAll();
+          
+          if (keep_structure !== false) {
+            await vds.initialize();
+          }
+          
+          return `### VDS Reset ${success ? '✅' : '❌'}\n` +
+            `تم مسح جميع الملفات: general.vds, user.vdsu, system.vdss\n` +
+            `المجلد: ${keep_structure !== false ? 'محفوظ' : 'محذوف'}`;
+        }
+      }),
+
+      // ============================================
+      // VDS ENCRYPT - Encrypt a file manually
+      // ============================================
+      vds_encrypt: tool({
+        description: "تشفير ملف يدوياً (لـ .vdss أو أي ملف)",
+        args: {
+          input: tool.schema.string().describe("مسار ملف الإدخال"),
+          output: tool.schema.string().optional().describe("مسار ملف الإخراج"),
+          key: tool.schema.string().optional().describe("مفتاح التشفير (افتراضي: المفتاح الحالي)"),
+        },
+        async execute(args) {
+          const { input, output, key } = args;
+          
+          if (!fs.existsSync(input)) {
+            return `❌ ملف غير موجود: ${input}`;
+          }
+          
+          const outPath = output || input.replace(/\.vds$/, '.vdss');
+          const encryption = key ? new VDSEncryption(key, DEFAULT_ENCRYPTION_CONFIG) : 
+                              (vds.hasEncryption() ? new VDSEncryption(DEFAULT_MASTER_KEY, DEFAULT_ENCRYPTION_CONFIG) : null);
+          
+          if (!encryption) {
+            return `❌ لا يوجد مفتاح تشفير. أضف key أو شغل vds_init مع master_key`;
+          }
+          
+          const success = encryption.encryptFile(input, outPath);
+          
+          return `### VDS Encrypt ${success ? '✅' : '❌'}\n` +
+            `المصدر: \`${input}\`\n` +
+            `الهدف: \`${outPath}\``;
+        }
+      }),
+
+      // ============================================
+      // VDS DECRYPT - Decrypt a file manually
+      // ============================================
+      vds_decrypt: tool({
+        description: "فك تشفير ملف يدوياً",
+        args: {
+          input: tool.schema.string().describe("مسار الملف المشفر"),
+          output: tool.schema.string().optional().describe("مسار ملف الإخراج"),
+          key: tool.schema.string().optional().describe("مفتاح التشفير"),
+        },
+        async execute(args) {
+          const { input, output, key } = args;
+          
+          if (!fs.existsSync(input)) {
+            return `❌ ملف غير موجود: ${input}`;
+          }
+          
+          const outPath = output || input.replace(/\.vdss$/, '.vds');
+          const encryption = key ? new VDSEncryption(key, DEFAULT_ENCRYPTION_CONFIG) : 
+                              (vds.hasEncryption() ? new VDSEncryption(DEFAULT_MASTER_KEY, DEFAULT_ENCRYPTION_CONFIG) : null);
+          
+          if (!encryption) {
+            return `❌ لا يوجد مفتاح تشفير. أضف key`;
+          }
+          
+          const success = encryption.decryptFile(input, outPath);
+          
+          return `### VDS Decrypt ${success ? '✅' : '❌'}\n` +
+            `المصدر: \`${input}\`\n` +
+            `الهدف: \`${outPath}\``;
+        }
+      }),
+
+      // ============================================
+      // VDS INFO - Show system info
+      // ============================================
+      vds_info: tool({
+        description: "معلومات نظام VDS",
+        args: {},
+        async execute() {
+          const files = vds.listFiles();
+          const totalSize = files.reduce((sum, f) => sum + (f.size || 0), 0);
+          
+          return `### VDS System Info\n` +
+            `المجلد: \`${vds.getVDSPath()}\`\n` +
+            `التشفير: ${vds.hasEncryption() ? 'مفعل 🔐' : 'معطل 🔓'}\n` +
+            `إجمالي الملفات: ${files.filter(f => f.exists).length}/3\n` +
+            `إجمالي الحجم: ${(totalSize / 1024).toFixed(2)} KB\n\n` +
+            files.map(f => 
+              `${f.format.toUpperCase()}: ${f.exists ? '✅' : '❌'} ${f.encrypted ? '🔐' : '🔓'} ${f.size ? `(${f.size} bytes)` : ''}`
+            ).join('\n');
+        }
+      }),
+    }
+  };
+};
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+function validateData(format: VDSFormat, data: any): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  switch (format) {
+    case 'vds':
+      if (!data.data || typeof data.data !== 'object') {
+        errors.push('.vds يتطلب حقل "data" من نوع object');
       }
-    }
-  }
-
-  // Save specific VDS file (human-readable JSON)
-  private saveFile(filename: VDSFileName, data: any): boolean {
-    try {
-      const filePath = path.join(VDS_DIR, filename);
-      const json = JSON.stringify(data, null, 2); // Pretty print for human readability
-      fs.writeFileSync(filePath, json, 'utf-8');
-      return true;
-    } catch (error) {
-      console.error(`[VDS] Failed to save ${filename}:`, error);
-      return false;
-    }
-  }
-
-  // Save all data
-  saveAll(): boolean {
-    let success = true;
-    for (const [key, filename] of Object.entries(VDS_FILES)) {
-      if ((this.data as any)[key] !== undefined) {
-        success = this.saveFile(filename, (this.data as any)[key]) && success;
+      break;
+      
+    case 'vdsu':
+      if (data.identity && typeof data.identity !== 'object') {
+        errors.push('identity يجب أن يكون object');
       }
-    }
-    return success;
-  }
-
-  // ===== CONSENT MANAGEMENT =====
-
-  // Check if consent given for a category
-  hasConsent(category: keyof VDSConsent): boolean {
-    return this.data.consent?.[category] === true;
-  }
-
-  // Request consent from user (called by video editor before saving)
-  async requestConsent(category: keyof VDSConsent, reason: string): Promise<boolean> {
-    if (this.hasConsent(category)) return true;
-
-    // In real usage, this would prompt the user via the CLI
-    // For now, we return false and let the caller handle the prompt
-    console.log(`[VDS] Consent needed for "${category}": ${reason}`);
-    return false;
-  }
-
-  // Grant consent (after user says yes)
-  grantConsent(category: keyof VDSConsent): boolean {
-    this.data.consent[category] = true;
-    this.data.consent.last_updated = new Date().toISOString();
-    return this.saveFile(VDS_FILES.consent, this.data.consent);
-  }
-
-  // Revoke consent
-  revokeConsent(category: keyof VDSConsent): boolean {
-    this.data.consent[category] = false;
-    this.data.consent.last_updated = new Date().toISOString();
-    // Optionally delete the data file
-    const filename = VDS_FILES[category as keyof typeof VDS_FILES];
-    if (filename && fs.existsSync(path.join(VDS_DIR, filename))) {
-      fs.unlinkSync(path.join(VDS_DIR, filename));
-    }
-    delete (this.data as any)[category];
-    return this.saveFile(VDS_FILES.consent, this.data.consent);
-  }
-
-  // ===== IDENTITY =====
-
-  setIdentity(identity: Omit<VDSIdentity, 'created_at' | 'updated_at'>): boolean {
-    if (!this.hasConsent('identity')) return false;
-
-    const now = new Date().toISOString();
-    this.data.identity = {
-      ...identity,
-      created_at: this.data.identity?.created_at || now,
-      updated_at: now
-    };
-    return this.saveFile(VDS_FILES.identity, this.data.identity);
-  }
-
-  getIdentity(): VDSIdentity | undefined {
-    return this.data.identity;
-  }
-
-  // ===== PREFERENCES =====
-
-  setPreferences(prefs: Partial<VDSPreferences>): boolean {
-    if (!this.hasConsent('preferences')) return false;
-
-    const now = new Date().toISOString();
-    this.data.preferences = {
-      ...this.getDefaultPreferences(),
-      ...this.data.preferences,
-      ...prefs,
-      updated_at: now
-    };
-    return this.saveFile(VDS_FILES.preferences, this.data.preferences);
-  }
-
-  getPreferences(): VDSPreferences | undefined {
-    return this.data.preferences;
-  }
-
-  private getDefaultPreferences(): VDSPreferences {
-    return {
-      montage_style: 'gaming',
-      favorite_tools: [],
-      preferred_luts: [],
-      preferred_sfx_categories: [],
-      default_export_presets: ['youtube'],
-      language: 'ar',
-      timezone: 'Asia/Baghdad',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-  }
-
-  // ===== MEMORY =====
-
-  addMemoryEntry(entry: Omit<VDSMemoryEntry, 'timestamp'>): boolean {
-    if (!this.hasConsent('memory')) return false;
-
-    const now = new Date().toISOString();
-    const newEntry: VDSMemoryEntry = {
-      ...entry,
-      timestamp: now
-    };
-
-    if (!this.data.memory) {
-      this.data.memory = {
-        entries: [],
-        total_sessions: 0,
-        last_session: now,
-        created_at: now,
-        updated_at: now
-      };
-    }
-
-    this.data.memory.entries.push(newEntry);
-    this.data.memory.last_session = now;
-    this.data.memory.updated_at = now;
-
-    // Keep only last 1000 entries
-    if (this.data.memory.entries.length > 1000) {
-      this.data.memory.entries = this.data.memory.entries.slice(-1000);
-    }
-
-    return this.saveFile(VDS_FILES.memory, this.data.memory);
-  }
-
-  getMemory(limit = 50): VDSMemoryEntry[] {
-    if (!this.data.memory) return [];
-    return this.data.memory.entries.slice(-limit);
-  }
-
-  searchMemory(query: string): VDSMemoryEntry[] {
-    if (!this.data.memory) return [];
-    const lower = query.toLowerCase();
-    return this.data.memory.entries.filter(e => 
-      e.action.toLowerCase().includes(lower) ||
-      e.tools_used.some(t => t.toLowerCase().includes(lower)) ||
-      e.notes.toLowerCase().includes(lower)
-    );
-  }
-
-  // ===== SESSIONS =====
-
-  startSession(sessionId: string): VDSSession {
-    const session: VDSSession = {
-      session_id: sessionId,
-      start_time: new Date().toISOString(),
-      commands: [],
-      files_processed: [],
-      duration_seconds: 0
-    };
-
-    if (!this.hasConsent('sessions')) return session;
-
-    if (!this.data.sessions) {
-      this.data.sessions = {
-        sessions: [],
-        created_at: session.start_time,
-        updated_at: session.start_time
-      };
-    }
-
-    this.data.sessions.sessions.push(session);
-    this.data.sessions.updated_at = session.start_time;
-    this.saveFile(VDS_FILES.sessions, this.data.sessions);
-
-    return session;
-  }
-
-  endSession(sessionId: string, commands: string[], files: string[]): boolean {
-    if (!this.hasConsent('sessions') || !this.data.sessions) return false;
-
-    const session = this.data.sessions.sessions.find(s => s.session_id === sessionId);
-    if (!session) return false;
-
-    session.end_time = new Date().toISOString();
-    session.commands = commands;
-    session.files_processed = files;
-    session.duration_seconds = Math.floor(
-      (new Date(session.end_time).getTime() - new Date(session.start_time).getTime()) / 1000
-    );
-
-    this.data.sessions.updated_at = session.end_time;
-    this.data.memory = this.data.memory || { entries: [], total_sessions: 0, last_session: '', created_at: '', updated_at: '' };
-    this.data.memory.total_sessions += 1;
-
-    return this.saveFile(VDS_FILES.sessions, this.data.sessions) && this.saveAll();
-  }
-
-  addCommandToSession(sessionId: string, command: string): void {
-    if (!this.hasConsent('sessions') || !this.data.sessions) return;
-    const session = this.data.sessions.sessions.find(s => s.session_id === sessionId);
-    if (session) {
-      session.commands.push(command);
-    }
-  }
-
-  addFileToSession(sessionId: string, file: string): void {
-    if (!this.hasConsent('sessions') || !this.data.sessions) return;
-    const session = this.data.sessions.sessions.find(s => s.session_id === sessionId);
-    if (session) {
-      session.files_processed.push(file);
-    }
-  }
-
-  // ===== UTILITIES =====
-
-  getVDSPath(): string {
-    return VDS_DIR;
-  }
-
-  getStatus(): { initialized: boolean; consent: VDSConsent; files: string[] } {
-    const files = Object.values(VDS_FILES).filter(f => 
-      fs.existsSync(path.join(VDS_DIR, f))
-    );
-    return {
-      initialized: this.initialized,
-      consent: this.data.consent || DEFAULT_CONSENT,
-      files
-    };
-  }
-
-  // Export all data (for backup/transfer)
-  exportAll(): string {
-    return JSON.stringify(this.data, null, 2);
-  }
-
-  // Import data (for restore/transfer)
-  importAll(json: string): boolean {
-    try {
-      const imported = JSON.parse(json) as VDSData;
-      this.data = { ...this.getEmptyData(), ...imported };
-      return this.saveAll();
-    } catch {
-      return false;
-    }
-  }
-
-  // Reset all data (with consent)
-  resetAll(): boolean {
-    this.data = this.getEmptyData();
-    for (const filename of Object.values(VDS_FILES)) {
-      const filePath = path.join(VDS_DIR, filename);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      if (data.preferences && typeof data.preferences !== 'object') {
+        errors.push('preferences يجب أن يكون object');
       }
-    }
-    return true;
+      break;
+      
+    case 'vdss':
+      // System data - flexible structure
+      break;
   }
+  
+  return { valid: errors.length === 0, errors };
 }
 
-// Singleton instance
-export const vds = new VDSPlugin();
+function deepMerge(target: any, source: any): any {
+  const result = { ...target };
+  
+  for (const key of Object.keys(source)) {
+    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      result[key] = deepMerge(target[key] || {}, source[key]);
+    } else {
+      result[key] = source[key];
+    }
+  }
+  
+  return result;
+}

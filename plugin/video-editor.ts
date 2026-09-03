@@ -1,9 +1,12 @@
 import { type Plugin, tool } from "@opencode-ai/plugin"
 import * as fs from "fs"
 import * as path from "path"
-import { VDSPlugin, vds } from "./vds_plugin.js"
+import { getVDSManager, VDSFormat, VDSEncryption, DEFAULT_ENCRYPTION_CONFIG } from "./vds_core.js"
 
 const BASE = "C:/Users/mr_ali7685/Documents/مونتاج"
+
+// Initialize VDS Manager
+const vds = getVDSManager("")
 
 const RES = {
   click: `${BASE}/SFX Click`,
@@ -1737,123 +1740,78 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
                 cmd = `python -m metadata_edit --schema ${schema} -i ${QUOT(inP)} -o ${QUOT(out)} && echo "Metadata edited" > ${QUOT(out)}`
                 break
               }
-              // 🧠 VDS (Virtual Data Space) Cases
+              // 🧠 VDS (Virtual Data Space) Cases - New API
               case "vds_init": {
                 await vds.initialize()
-                const status = vds.getStatus()
-                return `### VDS Initialized ✅\nالمسار: \`${status.initialized ? status.files.join(', ') : 'لا توجد ملفات'}\`\nالمجلد: \`${vds.getVDSPath()}\`\nالموافقة: ${JSON.stringify(status.consent, null, 2)}`
+                if (a.master_key) vds.setEncryptionKey(a.master_key)
+                const files = vds.listFiles()
+                return `### VDS Initialized ✅\nالمسار: \`${vds.getVDSPath()}\`\nالتشفير: ${vds.hasEncryption() ? 'مفعل 🔐' : 'معطل 🔓'}\nالملفات:\n${files.map(f => `- ${f.format}: ${f.exists ? 'موجود ✅' : 'غير موجود ❌'} (\${f.path})`).join('\n')}`
               }
-              case "vds_consent": {
+              case "vds_write": {
                 await vds.initialize()
-                const category = a.vds_category as keyof import("./vds_types.js").VDSConsent
-                const grant = a.vds_grant ?? false
-                if (grant) {
-                  vds.grantConsent(category)
-                  return `✅ تم منح الموافقة لـ: ${category}`
-                } else {
-                  const has = vds.hasConsent(category)
-                  return `الموافقة لـ "${category}": ${has ? 'ممنوحة ✅' : 'غير ممنوحة ❌'}\nالسبب: ${a.vds_reason ?? 'غير محدد'}`
-                }
+                let parsed: any
+                try { parsed = JSON.parse(a.data) } catch { return `❌ JSON غير صالح` }
+                const success = vds.write(a.format as VDSFormat, parsed)
+                const info = vds.getFileInfo(a.format as VDSFormat)
+                return `### VDS Write ${success ? '✅' : '❌'}\nالملف: \`${a.format}\`\nالمسار: \`${info.path}\`\nالحجم: ${info.size ? (info.size/1024).toFixed(2)+' KB' : '0 KB'}\nمُشفر: ${info.encrypted ? 'نعم 🔐' : 'لا 🔓'}`
               }
-              case "vds_identity": {
+              case "vds_read": {
                 await vds.initialize()
-                if (!vds.hasConsent('identity')) {
-                  return `❌ لم تمنح موافقة للهوية. استخدم vds_consent مع vds_grant=true`
-                }
-                if (a.vds_name || a.vds_age || a.vds_country || a.vds_company) {
-                  vds.setIdentity({
-                    name: a.vds_name ?? '',
-                    age: a.vds_age ?? 0,
-                    country: a.vds_country ?? '',
-                    company: a.vds_company ?? '',
-                    projects: a.vds_projects ? JSON.parse(a.vds_projects) : []
-                  })
-                  return `✅ تم حفظ الهوية: ${a.vds_name}`
-                } else {
-                  const id = vds.getIdentity()
-                  return id ? `الهوية المحفوظة:\n${JSON.stringify(id, null, 2)}` : 'لا توجد هوية محفوظة'
-                }
+                const data = vds.read(a.format as VDSFormat)
+                if (!data) return `❌ ملف .${a.format} غير موجود`
+                const output = a.pretty !== false ? JSON.stringify(data, null, 2) : JSON.stringify(data)
+                return `### VDS Read (.${a.format}) ✅\nالمسار: \`${vds.getFileInfo(a.format as VDSFormat).path}\`\n\`\`\`json\n${output}\n\`\`\``
               }
-              case "vds_preferences": {
+              case "vds_list": {
                 await vds.initialize()
-                if (!vds.hasConsent('preferences')) {
-                  return `❌ لم تمنح موافقة للتفضيلات. استخدم vds_consent مع vds_grant=true`
-                }
-                if (a.vds_style || a.vds_tools || a.vds_luts || a.vds_sfx_cats || a.vds_exports || a.vds_lang) {
-                  vds.setPreferences({
-                    montage_style: a.vds_style,
-                    favorite_tools: a.vds_tools ? JSON.parse(a.vds_tools) : undefined,
-                    preferred_luts: a.vds_luts ? JSON.parse(a.vds_luts) : undefined,
-                    preferred_sfx_categories: a.vds_sfx_cats ? JSON.parse(a.vds_sfx_cats) : undefined,
-                    default_export_presets: a.vds_exports ? JSON.parse(a.vds_exports) : undefined,
-                    language: a.vds_lang
-                  })
-                  return `✅ تم تحديث التفضيلات`
-                } else {
-                  const prefs = vds.getPreferences()
-                  return prefs ? `التفضيلات المحفوظة:\n${JSON.stringify(prefs, null, 2)}` : 'لا توجد تفضيلات محفوظة'
-                }
+                const files = vds.listFiles()
+                return `### VDS Files List\nالمجلد: \`${vds.getVDSPath()}\`\nالتشفير: ${vds.hasEncryption() ? 'مفعل 🔐' : 'معطل 🔓'}\n\n${files.map(f => `**${f.format.toUpperCase()}** ${f.exists ? '✅' : '❌'}\n  المسار: \`${f.path}\`\n  الحجم: ${f.size ? (f.size/1024).toFixed(2)+' KB' : '0 KB'}\n  معدل: ${f.modified ? f.modified.toLocaleString() : '—'}\n  مُشفر: ${f.encrypted ? 'نعم 🔐' : 'لا 🔓'}`).join('\n\n')}`
               }
-              case "vds_memory": {
+              case "vds_delete": {
                 await vds.initialize()
-                if (!vds.hasConsent('memory')) {
-                  return `❌ لم تمنح موافقة للذاكرة. استخدم vds_consent مع vds_grant=true`
-                }
-                if (a.vds_action && a.vds_tools_used && a.vds_result) {
-                  vds.addMemoryEntry({
-                    session_id: a.vds_session_id ?? `session_${Date.now()}`,
-                    action: a.vds_action,
-                    input: a.vds_input ?? '',
-                    output: a.vds_output ?? '',
-                    tools_used: JSON.parse(a.vds_tools_used),
-                    result: a.vds_result,
-                    notes: a.vds_notes ?? '',
-                    lessons_learned: a.vds_lessons ? JSON.parse(a.vds_lessons) : []
-                  })
-                  return `✅ تم حفظ مدخل الذاكرة`
-                } else if (a.vds_search) {
-                  const results = vds.searchMemory(a.vds_search)
-                  return `نتائج البحث (${results.length}):\n${results.map(r => `- ${r.timestamp}: ${r.action} [${r.tools_used.join(', ')}]`).join('\n')}`
-                } else if (a.vds_limit) {
-                  const entries = vds.getMemory(a.vds_limit)
-                  return `آخر ${entries.length} مدخل:\n${entries.map(e => `- ${e.timestamp}: ${e.action} (${e.result})`).join('\n')}`
-                } else {
-                  const entries = vds.getMemory(10)
-                  return `آخر 10 مدخلات:\n${entries.map(e => `- ${e.timestamp}: ${e.action} (${e.result})`).join('\n')}`
-                }
-              }
-              case "vds_sessions": {
-                await vds.initialize()
-                if (!vds.hasConsent('sessions')) {
-                  return `❌ لم تمنح موافقة للجلسات. استخدم vds_consent مع vds_grant=true`
-                }
-                return `الجلسات تدار تلقائياً مع كل عملية مونتاج`
-              }
-              case "vds_status": {
-                await vds.initialize()
-                const status = vds.getStatus()
-                return `### VDS Status\nالمسار: \`${status.initialized ? vds.getVDSPath() : 'غير مهيأ'}\`\nالملفات: ${status.files.join(', ') || 'لا توجد'}\nالموافقة: ${JSON.stringify(status.consent, null, 2)}`
+                if (!a.confirm) return `⚠️ يتطلب تأكيد: أضف confirm=true`
+                const success = vds.delete(a.format as VDSFormat)
+                return `### VDS Delete ${success ? '✅' : '❌'}\nالملف: .${a.format}\n${success ? 'تم الحذف' : 'الملف غير موجود'}`
               }
               case "vds_export": {
                 await vds.initialize()
-                const data = vds.exportAll()
                 const out = a.output ?? path.join(vds.getVDSPath(), `vds_backup_${Date.now()}.json`)
-                fs.writeFileSync(out, data, 'utf-8')
-                return `✅ تم تصدير البيانات إلى: ${out}`
+                const success = vds.exportAll(out)
+                return `### VDS Export ${success ? '✅' : '❌'}\nالملف: \`${out}\`\n${success ? 'تم التصدير (البيانات مفككة التشفير)' : 'فشل'}`
               }
               case "vds_import": {
                 await vds.initialize()
-                const file = a.input
-                if (!file || !fs.existsSync(file)) return `❌ ملف غير موجود: ${file}`
-                const json = fs.readFileSync(file, 'utf-8')
-                if (vds.importAll(json)) return `✅ تم استيراد البيانات من: ${file}`
-                return `❌ فشل الاستيراد`
+                if (!a.input || !fs.existsSync(a.input)) return `❌ ملف غير موجود: ${a.input}`
+                const success = vds.importAll(a.input)
+                return `### VDS Import ${success ? '✅' : '❌'}\nالمصدر: \`${a.input}\`\n${success ? 'تم الاستيراد' : 'فشل'}`
               }
               case "vds_reset": {
-    const confirm = a.vds_confirm ?? false
-                if (!confirm) return `⚠️ للتأكيد، أضف vds_confirm=true`
-                vds.resetAll()
-                return `✅ تم مسح جميع بيانات VDS`
+                if (!a.confirm) return `⚠️ للتأكيد، أضف confirm=true`
+                const success = vds.resetAll()
+                if (a.keep_structure !== false) await vds.initialize()
+                return `### VDS Reset ${success ? '✅' : '❌'}\nتم مسح جميع الملفات: general.vds, user.vdsu, system.vdss\nالمجلد: ${a.keep_structure !== false ? 'محفوظ' : 'محذوف'}`
+              }
+              case "vds_encrypt": {
+                if (!a.input || !fs.existsSync(a.input)) return `❌ ملف غير موجود: ${a.input}`
+                const out = a.output ?? a.input.replace(/\.vds$/, '.vdss')
+                const enc = a.key ? new VDSEncryption(a.key, DEFAULT_ENCRYPTION_CONFIG) : (vds.hasEncryption() ? new VDSEncryption("", DEFAULT_ENCRYPTION_CONFIG) : null)
+                if (!enc) return `❌ لا يوجد مفتاح تشفير. أضف key أو شغل vds_init مع master_key`
+                const success = enc.encryptFile(a.input, out)
+                return `### VDS Encrypt ${success ? '✅' : '❌'}\nالمصدر: \`${a.input}\`\nالهدف: \`${out}\``
+              }
+              case "vds_decrypt": {
+                if (!a.input || !fs.existsSync(a.input)) return `❌ ملف غير موجود: ${a.input}`
+                const out = a.output ?? a.input.replace(/\.vdss$/, '.vds')
+                const enc = a.key ? new VDSEncryption(a.key, DEFAULT_ENCRYPTION_CONFIG) : (vds.hasEncryption() ? new VDSEncryption("", DEFAULT_ENCRYPTION_CONFIG) : null)
+                if (!enc) return `❌ لا يوجد مفتاح تشفير`
+                const success = enc.decryptFile(a.input, out)
+                return `### VDS Decrypt ${success ? '✅' : '❌'}\nالمصدر: \`${a.input}\`\nالهدف: \`${out}\``
+              }
+              case "vds_info": {
+                await vds.initialize()
+                const files = vds.listFiles()
+                const totalSize = files.reduce((sum, f) => sum + (f.size || 0), 0)
+                return `### VDS System Info\nالمجلد: \`${vds.getVDSPath()}\`\nالتشفير: ${vds.hasEncryption() ? 'مفعل 🔐' : 'معطل 🔓'}\nإجمالي الملفات: ${files.filter(f => f.exists).length}/3\nإجمالي الحجم: ${(totalSize/1024).toFixed(2)} KB\n\n${files.map(f => `${f.format.toUpperCase()}: ${f.exists ? '✅' : '❌'} ${f.encrypted ? '🔐' : '🔓'} ${f.size ? `(${f.size} bytes)` : ''}`).join('\n')}`
               }
               default:
                 return `عملية غير معروفة: ${a.action}`
