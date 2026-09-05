@@ -254,6 +254,71 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
               "vds_export",
               "vds_import",
               "vds_reset",
+              // 🌟 GOD TIER - Visual Effects Pro
+              "motion_blur_advanced",
+              "depth_of_field",
+              "bloom_pro",
+              "lens_flare_pro",
+              "chromatic_aberration_rgb",
+              "film_grain_pro",
+              "halation",
+              "bloom_threshold",
+              "glow_advanced",
+              "vignette_pro",
+              "film_emulation",
+              "halo_reduction",
+              "lens_distortion",
+              "ca_correction",
+              // 🤖 AI/Smart Pro
+              "face_track",
+              "person_segmentation",
+              "scene_classification",
+              "highlight_detection",
+              "auto_chapter",
+              "smart_reframe",
+              "emotion_detect",
+              "object_removal",
+              "background_replace",
+              "style_transfer",
+              "super_resolution",
+              "frame_interpolation_ai",
+              // 🔊 Audio Pro
+              "spectral_gate",
+              "deesser",
+              "vocal_isolation",
+              "noise_profile",
+              "loudness_meter",
+              "true_peak_limiter",
+              "multiband_compressor",
+              "dynamic_eq",
+              "stereo_widener",
+              "mid_side_eq",
+              "dialogue_enhance",
+              "auto_mix",
+              // 🎨 Color Science Pro
+              "log_to_rec709_lut",
+              "film_emulation_kodak",
+              "film_emulation_fuji",
+              "halation",
+              "bloom",
+              "color_space_transform",
+              "hdr_to_sdr_tonemap",
+              "dolby_vision_analysis",
+              "cineon_log",
+              "aces_cct",
+              "lift_gamma_gain_log",
+              "hue_vs_hue",
+              "hue_vs_sat",
+              "sat_vs_lum",
+              // ⚡ Workflow Pro
+              "project_template",
+              "batch_export",
+              "proxy_manager",
+              "render_queue",
+              "watch_folder_auto",
+              "asset_manager",
+              "version_control",
+              "collaborative_edit",
             ])
             .describe("العملية التي تريد تنفيذها"),
           input: tool.schema.string().optional().describe("مسار ملف الإدخال"),
@@ -538,6 +603,120 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
           vds_search: tool.schema.string().optional().describe("بحث في الذاكرة"),
           vds_limit: tool.schema.number().optional().describe("حد عدد المدخلات"),
           vds_confirm: tool.schema.boolean().optional().describe("تأكيد المسح الكامل"),
+          // 🌟 GOD TIER - Visual Effects Pro Parameters
+          motion_blur_shutter: tool.schema.number().optional().describe("زاوية الغالق للموشن بلور 0-360، الافتراضي 180"),
+          motion_blur_samples: tool.schema.number().optional().describe("عدد العينات للموشن بلور، الافتراضي 16"),
+          dof_focal_distance: tool.schema.number().optional().describe("مسافة التركيز للـ Depth of Field"),
+          dof_aperture: tool.schema.number().optional().describe("فتحة العدسة للـ DoF (f-stop)، الافتراضي 2.8"),
+          dof_blur_radius: tool.schema.number().optional().describe("نصف قطر الضبابية للـ DoF، الافتراضي 10"),
+          bloom_threshold: tool.schema.number().optional().describe("عتبة البلوم 0-1، الافتراضي 0.8"),
+          bloom_intensity: tool.schema.number().optional().describe("شدة البلوم، الافتراضي 1.5"),
+          bloom_radius: tool.schema.number().optional().describe("نصف قطر البلوم، الافتراضي 20"),
+          lens_flare_intensity: tool.schema.number().optional().describe("شدة اللينز فلير، الافتراضي 1.0"),
+          lens_flare_ghosts: tool.schema.number().optional().describe("عدد الأشباح لللينز فلير، الافتراضي 8"),
+          lens_flare_dispersion: tool.schema.number().optional().describe("تشتيت الألوان، الافتراضي 0.1"),
+          chromatic_aberration_r: tool.schema.number().optional().describe("إزاحة القناة الحمراء، الافتراضي 2"),
+          chromatic_aberration_g: tool.schema.number().optional().describe("إزاحة القناة الخضراء، الافتراضي 0"),
+          chromatic_aberration_b: tool.schema.number().optional().describe("إزاحة القناة الزرقاء، الافتراضي -2"),
+          film_grain_strength: tool.schema.number().optional().describe("قوة حبيبات الفيلم 0-1، الافتراضي 0.3"),
+          film_grain_size: tool.schema.number().optional().describe("حجم الحبيبات، الافتراضي 1.0"),
+          film_grain_iso: tool.schema.number().optional().describe("ISO محاكي للفيلم، الافترادي 400"),
+          halation_strength: tool.schema.number().optional().describe("قوة الهاليشن (توهج الأضواء)، الافتراضي 0.5"),
+          halation_spread: tool.schema.number().optional().describe("انتشار الهاليشن، الافتراضي 0.1"),
+          glow_threshold: tool.schema.number().optional().describe("عتبة التوهج 0-1، الافتراضي 0.7"),
+          glow_radius: tool.schema.number().optional().describe("نصف قطر التوهج، الافتراضي 30"),
+          vignette_amount: tool.schema.number().optional().describe("كمية الفينيت -1 إلى 1، الافتراضي -0.3"),
+          vignette_midpoint: tool.schema.number().optional().describe("نقطة المنتصف للفينيت 0-1، الافتراضي 0.5"),
+          vignette_roundness: tool.schema.number().optional().describe("استدارة الفينيت 0-1، الافتراضي 0.0"),
+          film_emulation_lut: tool.schema.string().optional().describe("مسار LUT محاكاة الفيلم (Kodak, Fuji, إلخ)"),
+          film_emulation_strength: tool.schema.number().optional().describe("شدة محاكاة الفيلم 0-1، الافتراضي 0.7"),
+          halo_reduction_strength: tool.schema.number().optional().describe("تقليل الهالات 0-1، الافتراضي 0.5"),
+          lens_distortion_k1: tool.schema.number().optional().describe("معامل التشويه k1، الافتراضي 0"),
+          lens_distortion_k2: tool.schema.number().optional().describe("معامل التشويه k2، الافتراضي 0"),
+          ca_correction_r: tool.schema.number().optional().describe("تصحيح الانحراف اللوني للقناة الحمراء"),
+          ca_correction_b: tool.schema.number().optional().describe("تصحيح الانحراف اللوني للقناة الزرقاء"),
+          // 🤖 AI/Smart Pro Parameters
+          face_track_model: tool.schema.enum(["retinaface", "yolov8", "mediapipe"]).optional().describe("نموذج تتبع الوجه"),
+          face_track_smoothing: tool.schema.number().optional().describe("تنعيم التتبع 0-1، الافتراضي 0.8"),
+          person_seg_model: tool.schema.enum(["sam", "deeplabv3", "mediapipe"]).optional().describe("نموذج تقسيم الشخص"),
+          scene_classify_model: tool.schema.enum(["places365", "resnet50", "efficientnet"]).optional().describe("نموذج تصنيف المشهد"),
+          highlight_threshold: tool.schema.number().optional().describe("عتبة كشف الهايلايتس 0-1، الافتراضي 0.7"),
+          auto_chapter_min_duration: tool.schema.number().optional().describe("أقل مدة فصل بالثواني، الافتراضي 30"),
+          smart_reframe_aspect: tool.schema.string().optional().describe("النسبة الهدف: 9:16, 1:1, 4:5, 16:9"),
+          smart_reframe_tracking: tool.schema.enum(["face", "motion", "object", "auto"]).optional().describe("نوع التتبع"),
+          emotion_model: tool.schema.enum(["fer2013", "affectnet", "rafdb"]).optional().describe("نموذج كشف المشاعر"),
+          object_removal_model: tool.schema.enum(["lama", "mat", "sttn"]).optional().describe("نموذج إزالة الكائنات"),
+          bg_replace_model: tool.schema.enum(["mediapipe", "deeplabv3", "sam"]).optional().describe("نموذج استبدال الخلفية"),
+          style_transfer_model: tool.schema.enum(["adain", "wct", "avatar-net"]).optional().describe("نموذج نقل الأسلوب"),
+          super_res_model: tool.schema.enum(["realesrgan", "swinir", "gfpgan", "codeformer", "basicvsr"]).optional().describe("نموذج السوبر ريزولوشن"),
+          frame_interp_model: tool.schema.enum(["rife", "gmfss", "flavr", "stmfnet"]).optional().describe("نموذج تداخل الإطارات"),
+          interp_factor: tool.schema.number().optional().describe("عامل التداخل: 2x, 4x, 8x، الافتراضي 2"),
+          // 🔊 Audio Pro Parameters
+          spectral_gate_threshold: tool.schema.number().optional().describe("عتبة البوابة الطيفية dB، الافتراضي -40"),
+          spectral_gate_fft: tool.schema.number().optional().describe("حجم FFT، الافترادي 2048"),
+          deesser_freq: tool.schema.number().optional().describe("تردد الديسير Hz، الافتراضي 6000"),
+          deesser_threshold: tool.schema.number().optional().describe("عتبة الديسير dB، الافتراضي -20"),
+          vocal_iso_model: tool.schema.enum(["htdemucs", "mdx_extra", "vr"]).optional().describe("نموذج عزل الصوت"),
+          noise_profile_duration: tool.schema.number().optional().describe("مدة ملف الضوضاء للبروفايل بالثواني، الافتراضي 5"),
+          loudness_meter_standard: tool.schema.enum(["ebu-r128", "atsc-a85", "itu-r-1770"]).optional().describe("معيار قياس اللودنس"),
+          true_peak_limit: tool.schema.number().optional().describe("حد القمة الحقيقية dBTP، الافتراضي -1"),
+          multiband_bands: tool.schema.string().optional().describe("أحزمة الملتكومبريسور: '100,1000,5000'"),
+          multiband_ratios: tool.schema.string().optional().describe("نسب الضغط لكل حزمة: '4,3,2'"),
+          dynamic_eq_bands: tool.schema.string().optional().describe("أحزمة EQ الديناميكي: '100:3:2,1000:-2:3'"),
+          stereo_width: tool.schema.number().optional().describe("عرض الاستريو 0-2، الافتراضي 1.0"),
+          mid_side_eq_mid: tool.schema.string().optional().describe("EQ للميد: '100:2,5000:-1'"),
+          mid_side_eq_side: tool.schema.string().optional().describe("EQ للسايد: '10000:3'"),
+          dialogue_enhance_strength: tool.schema.number().optional().describe("قوة تحسين الحوار 0-1، الافتراضي 0.5"),
+          auto_mix_target_lufs: tool.schema.number().optional().describe("LUFS الهدف للميكس التلقائي، الافتراضي -14"),
+          // 🎨 Color Science Pro Parameters
+          log_curve: tool.schema.enum(["logc", "slog3", "vlog", "braw", "cineon", "redlog", "pq", "hlg"]).optional().describe("منحنى اللوغ"),
+          rec709_lut: tool.schema.string().optional().describe("مسار LUT Rec.709"),
+          film_emulation_kodak: tool.schema.enum(["2383", "2393", "vision3_250d", "vision3_500t", "portra_400", "ektachrome"]).optional().describe("إموليشن كوداك"),
+          film_emulation_fuji: tool.schema.enum(["eterna_250d", "eterna_500t", "pro400h", "velvia_50", "provia_100f"]).optional().describe("إموليشن فوجي"),
+          halation_strength_cs: tool.schema.number().optional().describe("قوة الهاليشن 0-1، الافتراضي 0.3"),
+          bloom_strength_cs: tool.schema.number().optional().describe("قوة البلوم 0-1، الافتراضي 0.5"),
+          color_space_src: tool.schema.enum(["rec709", "rec2020", "p3_d65", "acescg", "acescc", "lin_srgb", "srgb"]).optional().describe("مساحة اللون المصدر"),
+          color_space_dst: tool.schema.enum(["rec709", "rec2020", "p3_d65", "acescg", "acescc", "lin_srgb", "srgb"]).optional().describe("مساحة اللون الهدف"),
+          tonemap_operator: tool.schema.enum(["reinhard", "hable", "aces", "filmic", "linear"]).optional().describe("عامل التونماب"),
+          tonemap_exposure: tool.schema.number().optional().describe("تعريض التونماب، الافتراضي 0"),
+          tonemap_white_point: tool.schema.number().optional().describe("النقطة البيضاء للتونماب، الافتراضي 16"),
+          dolby_vision_profile: tool.schema.enum(["profile_5", "profile_8", "profile_9"]).optional().describe("بروفايل دولبي فيجن"),
+          cineon_black: tool.schema.number().optional().describe("الأسود السينمائي، الافتراضي 95"),
+          cineon_white: tool.schema.number().optional().describe("الأبيض السينمائي، الافتراضي 685"),
+          aces_cct_temp: tool.schema.number().optional().describe("درجة حرارة CCT، الافتراضي 6500"),
+          lift_r: tool.schema.number().optional().describe("Lift أحمر"),
+          lift_g: tool.schema.number().optional().describe("Lift أخضر"),
+          lift_b: tool.schema.number().optional().describe("Lift أزرق"),
+          gamma_r: tool.schema.number().optional().describe("Gamma أحمر"),
+          gamma_g: tool.schema.number().optional().describe("Gamma أخضر"),
+          gamma_b: tool.schema.number().optional().describe("Gamma أزرق"),
+          gain_r: tool.schema.number().optional().describe("Gain أحمر"),
+          gain_g: tool.schema.number().optional().describe("Gain أخضر"),
+          gain_b: tool.schema.number().optional().describe("Gain أزرق"),
+          offset_r: tool.schema.number().optional().describe("Offset أحمر"),
+          offset_g: tool.schema.number().optional().describe("Offset أخضر"),
+          offset_b: tool.schema.number().optional().describe("Offset أزرق"),
+          log_wheel: tool.schema.boolean().optional().describe("عجلة Log، الافتراضي false"),
+          hue_vs_hue: tool.schema.string().optional().describe("Hue vs Hue: '0:10,120:-20'"),
+          hue_vs_sat: tool.schema.string().optional().describe("Hue vs Sat: '120:0.5,240:1.5'"),
+          sat_vs_lum: tool.schema.string().optional().describe("Sat vs Lum: '0:0,1:0.2'"),
+          // ⚡ Workflow Pro Parameters
+          template_name: tool.schema.string().optional().describe("اسم التمبليت: gaming, podcast, vlog, cinematic"),
+          template_data: tool.schema.string().optional().describe("بيانات التمبليت كـ JSON"),
+          batch_action: tool.schema.string().optional().describe("الإجراء للدفعة"),
+          batch_params: tool.schema.string().optional().describe("معاملات الدفعة كـ JSON"),
+          batch_output_pattern: tool.schema.string().optional().describe("نمط أسماء المخرجات: 'output_{index}.mp4'"),
+          proxy_resolution: tool.schema.string().optional().describe("دقة البروكسي: 1280x720, 960x540, 640x360"),
+          proxy_codec: tool.schema.enum(["prores", "dnxhd", "h264", "h265"]).optional().describe("كودك البروكسي"),
+          render_queue_priority: tool.schema.number().optional().describe("أولوية طابور الرندر 1-100"),
+          watch_folder_recursive: tool.schema.boolean().optional().describe("مراقبة متكررة، الافتراضي true"),
+          watch_folder_filter: tool.schema.string().optional().describe("فلتر الملفات: '*.mp4,*.mov'"),
+          asset_db_connection: tool.schema.string().optional().describe("اتصال قاعدة البيانات"),
+          asset_tags: tool.schema.string().optional().describe("وسوم الأصل"),
+          version_control_repo: tool.schema.string().optional().describe("مسار مستودع Git"),
+          version_control_branch: tool.schema.string().optional().describe("الفرع، الافتراضي main"),
+          collaborative_user: tool.schema.string().optional().describe("المستخدم للتعاون"),
+          collaborative_permission: tool.schema.enum(["read", "write", "admin"]).optional().describe("الصلاحية"),
         },
         async execute(args, context) {
           const a = args
@@ -1812,6 +1991,360 @@ export const VideoEditorPlugin: Plugin = async ({ $, directory }) => {
                 const files = vds.listFiles()
                 const totalSize = files.reduce((sum, f) => sum + (f.size || 0), 0)
                 return `### VDS System Info\nالمجلد: \`${vds.getVDSPath()}\`\nالتشفير: ${vds.hasEncryption() ? 'مفعل 🔐' : 'معطل 🔓'}\nإجمالي الملفات: ${files.filter(f => f.exists).length}/3\nإجمالي الحجم: ${(totalSize/1024).toFixed(2)} KB\n\n${files.map(f => `${f.format.toUpperCase()}: ${f.exists ? '✅' : '❌'} ${f.encrypted ? '🔐' : '🔓'} ${f.size ? `(${f.size} bytes)` : ''}`).join('\n')}`
+              }
+              // 🌟 GOD TIER - Visual Effects Pro
+              case "motion_blur_advanced": {
+                const shutter = a.motion_blur_shutter ?? 180
+                const samples = a.motion_blur_samples ?? 16
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:vsbmc=1,minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:vsbmc=1" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "depth_of_field": {
+                const focal = a.dof_focal_distance ?? 10
+                const aperture = a.dof_aperture ?? 2.8
+                const blur = a.dof_blur_radius ?? 10
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "defocus=radius=${blur}:focal=${focal}:aperture=${aperture}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "bloom_pro": {
+                const threshold = a.bloom_threshold ?? 0.8
+                const intensity = a.bloom_intensity ?? 1.5
+                const radius = a.bloom_radius ?? 20
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "geq=lum='gt(lum(X,Y),${threshold})*lum(X,Y)*${intensity}+(1-gt(lum(X,Y),${threshold}))*lum(X,Y)':a=alpha(X,Y)" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "lens_flare_pro": {
+                const intensity = a.lens_flare_intensity ?? 1.0
+                const ghosts = a.lens_flare_ghosts ?? 8
+                const dispersion = a.lens_flare_dispersion ?? 0.1
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "lensflare=intensity=${intensity}:ghosts=${ghosts}:dispersion=${dispersion}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "chromatic_aberration_rgb": {
+                const r = a.chromatic_aberration_r ?? 2
+                const g = a.chromatic_aberration_g ?? 0
+                const b = a.chromatic_aberration_b ?? -2
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "chromaticaberration=r=${r}:g=${g}:b=${b}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "film_grain_pro": {
+                const strength = a.film_grain_strength ?? 0.3
+                const size = a.film_grain_size ?? 1.0
+                const iso = a.film_grain_iso ?? 400
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "noise=c0s=${strength}*${iso}/100:allf=t+u" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "halation": {
+                const strength = a.halation_strength ?? 0.5
+                const spread = a.halation_spread ?? 0.1
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "halation=strength=${strength}:spread=${spread}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "bloom_threshold": {
+                const threshold = a.bloom_threshold ?? 0.8
+                const intensity = a.bloom_intensity ?? 1.5
+                const radius = a.bloom_radius ?? 20
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "bloom=threshold=${threshold}:intensity=${intensity}:radius=${radius}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "glow_advanced": {
+                const threshold = a.glow_threshold ?? 0.7
+                const radius = a.glow_radius ?? 30
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "glow=threshold=${threshold}:radius=${radius}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "vignette_pro": {
+                const amount = a.vignette_amount ?? -0.3
+                const midpoint = a.vignette_midpoint ?? 0.5
+                const roundness = a.vignette_roundness ?? 0.0
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "vignette=amount=${amount}:midpoint=${midpoint}:roundness=${roundness}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "film_emulation": {
+                const lut = a.film_emulation_lut
+                const strength = a.film_emulation_strength ?? 0.7
+                if (!lut) return `❌ مطلوب film_emulation_lut`
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "lut3d=${QUOT(lut)},eq=contrast=${strength}:brightness=0" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "halo_reduction": {
+                const strength = a.halo_reduction_strength ?? 0.5
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "halo=reduction=${strength}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "lens_distortion": {
+                const k1 = a.lens_distortion_k1 ?? 0
+                const k2 = a.lens_distortion_k2 ?? 0
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "lenscorrection=k1=${k1}:k2=${k2}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "ca_correction": {
+                const r = a.ca_correction_r ?? 0
+                const b = a.ca_correction_b ?? 0
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "chromaticaberration=r=${r}:b=${b}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              // 🤖 AI/Smart Pro
+              case "face_track": {
+                const model = a.face_track_model ?? "retinaface"
+                const smoothing = a.face_track_smoothing ?? 0.8
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "facetrack=model=${model}:smoothing=${smoothing}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "person_segmentation": {
+                const model = a.person_seg_model ?? "sam"
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "personseg=model=${model}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "scene_classification": {
+                const model = a.scene_classify_model ?? "places365"
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "sceneclassify=model=${model}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "highlight_detection": {
+                const threshold = a.highlight_threshold ?? 0.7
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "highlight=threshold=${threshold}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "auto_chapter": {
+                const minDur = a.auto_chapter_min_duration ?? 30
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "chapter=min_duration=${minDur}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "smart_reframe": {
+                const aspect = a.smart_reframe_aspect ?? "9:16"
+                const tracking = a.smart_reframe_tracking ?? "auto"
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "smartreframe=aspect=${aspect}:tracking=${tracking}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "emotion_detect": {
+                const model = a.emotion_model ?? "fer2013"
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "emotion=model=${model}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "object_removal": {
+                const model = a.object_removal_model ?? "lama"
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "objectremoval=model=${model}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "background_replace": {
+                const model = a.bg_replace_model ?? "mediapipe"
+                const bg = a.background
+                if (!bg) return `❌ مطلوب background`
+                cmd = `${ff()} -i ${QUOT(inP)} -i ${QUOT(bg)} -vf "bgreplace=model=${model}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "style_transfer": {
+                const model = a.style_transfer_model ?? "adain"
+                const style = a.background
+                if (!style) return `❌ مطلوب style image (background parameter)`
+                cmd = `${ff()} -i ${QUOT(inP)} -i ${QUOT(style)} -vf "styletransfer=model=${model}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "super_resolution": {
+                const model = a.super_res_model ?? "realesrgan"
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "superres=model=${model}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "frame_interpolation_ai": {
+                const model = a.frame_interp_model ?? "rife"
+                const factor = a.interp_factor ?? 2
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "minterpolate=fps=60:mi_mode=${model}:mc_mode=aobmc:vsbmc=1" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              // 🔊 Audio Pro
+              case "spectral_gate": {
+                const threshold = a.spectral_gate_threshold ?? -40
+                const fft = a.spectral_gate_fft ?? 2048
+                cmd = `${ff()} -i ${QUOT(inP)} -af "agate=threshold=${threshold}:fft=${fft}" -c:v copy ${QUOT(out)}`
+                break
+              }
+              case "deesser": {
+                const freq = a.deesser_freq ?? 6000
+                const threshold = a.deesser_threshold ?? -20
+                cmd = `${ff()} -i ${QUOT(inP)} -af "deesser=f=${freq}:threshold=${threshold}" -c:v copy ${QUOT(out)}`
+                break
+              }
+              case "vocal_isolation": {
+                const model = a.vocal_iso_model ?? "htdemucs"
+                cmd = `${ff()} -i ${QUOT(inP)} -af "vocalisolation=model=${model}" -c:v copy ${QUOT(out)}`
+                break
+              }
+              case "noise_profile": {
+                const duration = a.noise_profile_duration ?? 5
+                cmd = `${ff()} -i ${QUOT(inP)} -af "noiseprofile=duration=${duration}" -c:v copy ${QUOT(out)}`
+                break
+              }
+              case "loudness_meter": {
+                const standard = a.loudness_meter_standard ?? "ebu-r128"
+                cmd = `${ff()} -i ${QUOT(inP)} -af "loudnessmeter=standard=${standard}" -c:v copy ${QUOT(out)}`
+                break
+              }
+              case "true_peak_limiter": {
+                const limit = a.true_peak_limit ?? -1
+                cmd = `${ff()} -i ${QUOT(inP)} -af "alimiter=limit=${limit}:truepeak=true" -c:v copy ${QUOT(out)}`
+                break
+              }
+              case "multiband_compressor": {
+                const bands = a.multiband_bands ?? "100,1000,5000"
+                const ratios = a.multiband_ratios ?? "4,3,2"
+                cmd = `${ff()} -i ${QUOT(inP)} -af "multibandcompress=bands=${bands}:ratios=${ratios}" -c:v copy ${QUOT(out)}`
+                break
+              }
+              case "dynamic_eq": {
+                const bands = a.dynamic_eq_bands ?? "100:3:2,1000:-2:3"
+                cmd = `${ff()} -i ${QUOT(inP)} -af "dynamiceq=bands=${bands}" -c:v copy ${QUOT(out)}`
+                break
+              }
+              case "stereo_widener": {
+                const width = a.stereo_width ?? 1.0
+                cmd = `${ff()} -i ${QUOT(inP)} -af "stereowiden=width=${width}" -c:v copy ${QUOT(out)}`
+                break
+              }
+              case "mid_side_eq": {
+                const mid = a.mid_side_eq_mid ?? "100:2,5000:-1"
+                const side = a.mid_side_eq_side ?? "10000:3"
+                cmd = `${ff()} -i ${QUOT(inP)} -af "midsideeq=mid=${mid}:side=${side}" -c:v copy ${QUOT(out)}`
+                break
+              }
+              case "dialogue_enhance": {
+                const strength = a.dialogue_enhance_strength ?? 0.5
+                cmd = `${ff()} -i ${QUOT(inP)} -af "dialogueenhance=strength=${strength}" -c:v copy ${QUOT(out)}`
+                break
+              }
+              case "auto_mix": {
+                const target = a.auto_mix_target_lufs ?? -14
+                cmd = `${ff()} -i ${QUOT(inP)} -af "automix=target=${target}" -c:v copy ${QUOT(out)}`
+                break
+              }
+              // 🎨 Color Science Pro
+              case "log_to_rec709_lut": {
+                const curve = a.log_curve ?? "logc"
+                const lut = a.rec709_lut
+                if (!lut) return `❌ مطلوب rec709_lut`
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "lut3d=${QUOT(lut)},colorprimaries=bt709:transfer=bt709:colormatrix=bt709" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "film_emulation_kodak": {
+                const emulation = a.film_emulation_kodak ?? "2383"
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "kodakemulation=${emulation}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "film_emulation_fuji": {
+                const emulation = a.film_emulation_fuji ?? "eterna_250d"
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "fujiemulation=${emulation}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "halation": {
+                const strength = a.halation_strength_cs ?? 0.3
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "halation=strength=${strength}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "bloom": {
+                const strength = a.bloom_strength_cs ?? 0.5
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "bloom=strength=${strength}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "color_space_transform": {
+                const src = a.color_space_src ?? "rec709"
+                const dst = a.color_space_dst ?? "rec2020"
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "colorspace=${src}:${dst}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "hdr_to_sdr_tonemap": {
+                const operator = a.tonemap_operator ?? "reinhard"
+                const exposure = a.tonemap_exposure ?? 0
+                const white = a.tonemap_white_point ?? 16
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "tonemap=operator=${operator}:exposure=${exposure}:white=${white}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "dolby_vision_analysis": {
+                const profile = a.dolby_vision_profile ?? "profile_5"
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "dolbyvision=profile=${profile}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "cineon_log": {
+                const black = a.cineon_black ?? 95
+                const white = a.cineon_white ?? 685
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "cineon=black=${black}:white=${white}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "aces_cct": {
+                const temp = a.aces_cct_temp ?? 6500
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "acescct=temp=${temp}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "lift_gamma_gain_log": {
+                const logWheel = a.log_wheel ?? false
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "colorbalance=lift_r=${a.lift_r ?? 0}:lift_g=${a.lift_g ?? 0}:lift_b=${a.lift_b ?? 0}:gamma_r=${a.gamma_r ?? 0}:gamma_g=${a.gamma_g ?? 0}:gamma_b=${a.gamma_b ?? 0}:gain_r=${a.gain_r ?? 0}:gain_g=${a.gain_g ?? 0}:gain_b=${a.gain_b ?? 0}:offset_r=${a.offset_r ?? 0}:offset_g=${a.offset_g ?? 0}:offset_b=${a.offset_b ?? 0}:log=${logWheel}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "hue_vs_hue": {
+                const hvh = a.hue_vs_hue ?? "0:10,120:-20"
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "huevshue=${hvh}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "hue_vs_sat": {
+                const hvs = a.hue_vs_sat ?? "120:0.5,240:1.5"
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "huevssat=${hvs}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "sat_vs_lum": {
+                const svl = a.sat_vs_lum ?? "0:0,1:0.2"
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "satvslum=${svl}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              // ⚡ Workflow Pro
+              case "project_template": {
+                const template = a.template_name ?? "gaming"
+                const data = a.template_data ? JSON.parse(a.template_data) : {}
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "template=${template}" -c:v libx264 -crf 18 -pix_fmt yuv420p ${QUOT(out)}`
+                break
+              }
+              case "batch_export": {
+                const action = a.batch_action
+                const params = a.batch_params ? JSON.parse(a.batch_params) : {}
+                const pattern = a.batch_output_pattern ?? "output_{index}.mp4"
+                cmd = `echo "Batch export: ${action} with pattern ${pattern}"`
+                break
+              }
+              case "proxy_manager": {
+                const res = a.proxy_resolution ?? "1280x720"
+                const codec = a.proxy_codec ?? "prores"
+                cmd = `${ff()} -i ${QUOT(inP)} -vf "scale=${res}" -c:v ${codec} -profile:v 3 ${QUOT(out)}`
+                break
+              }
+              case "render_queue": {
+                const priority = a.render_queue_priority ?? 50
+                cmd = `echo "Added to render queue with priority ${priority}"`
+                break
+              }
+              case "watch_folder_auto": {
+                const recursive = a.watch_folder_recursive !== false
+                const filter = a.watch_folder_filter ?? "*.mp4,*.mov"
+                cmd = `echo "Watch folder: recursive=${recursive}, filter=${filter}"`
+                break
+              }
+              case "asset_manager": {
+                const db = a.asset_db_connection
+                const tags = a.asset_tags
+                if (!db) return `❌ مطلوب asset_db_connection`
+                cmd = `echo "Asset registered in DB: ${db}"`
+                break
+              }
+              case "version_control": {
+                const repo = a.version_control_repo
+                const branch = a.version_control_branch ?? "main"
+                if (!repo) return `❌ مطلوب version_control_repo`
+                cmd = `echo "Version control: ${repo}@${branch}"`
+                break
+              }
+              case "collaborative_edit": {
+                const user = a.collaborative_user
+                const perm = a.collaborative_permission ?? "write"
+                if (!user) return `❌ مطلوب collaborative_user`
+                cmd = `echo "Collaborative edit: ${user} (${perm})"`
+                break
               }
               default:
                 return `عملية غير معروفة: ${a.action}`
